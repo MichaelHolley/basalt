@@ -59,6 +59,6 @@ export const actions: Actions = {
 			updatedAt: now,
 		}).run();
 
-		redirect(302, `/todos/${id}`);
+		redirect(302, `/spaces/${result.data.spaceId}/${id}`);
 	},
 };

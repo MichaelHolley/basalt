@@ -7,19 +7,59 @@
 	import { page } from '$app/stores';
 
 	import type { LayoutData } from './$types';
+	import type { SpaceNode } from '$lib/server/db/utils';
 
 	let { children, data }: { children: any; data: LayoutData } = $props();
 
-	let segments = $derived(
-		$page.url.pathname
-			.split('/')
-			.filter(Boolean)
-			.map((seg, i, arr) => ({
+	// Flatten the space tree into a id → name map for breadcrumb label resolution
+	function flattenSpaces(nodes: SpaceNode[], map: Map<string, string> = new Map()) {
+		for (const node of nodes) {
+			map.set(node.id, node.name);
+			flattenSpaces(node.children, map);
+		}
+		return map;
+	}
+
+	let spaceNameMap = $derived(flattenSpaces(data.spaces ?? []));
+
+	let breadcrumbSegments = $derived(() => {
+		const parts = $page.url.pathname.split('/').filter(Boolean);
+
+		// Only apply smart breadcrumb for /spaces/... routes
+		if (parts[0] !== 'spaces') {
+			return parts.map((seg, i, arr) => ({
 				label: seg.charAt(0).toUpperCase() + seg.slice(1),
 				href: '/' + arr.slice(0, i + 1).join('/'),
 				isLast: i === arr.length - 1,
-			}))
-	);
+			}));
+		}
+
+		// Drop the 'spaces' prefix — breadcrumb starts from the space name
+		const spaceParts = parts.slice(1);
+		if (spaceParts.length === 0) return [];
+
+		const pd = $page.data as Record<string, any>;
+
+		return spaceParts.map((seg, i, arr) => {
+			const isLast = i === arr.length - 1;
+			const pathSoFar = arr.slice(0, i + 1).join('/');
+			const href = '/spaces/' + pathSoFar;
+
+			let label: string;
+			if (isLast && pd.type === 'space') {
+				label = pd.space?.name ?? seg;
+			} else if (isLast && pd.type === 'note') {
+				label = pd.note?.title ?? seg;
+			} else if (isLast && pd.type === 'todo') {
+				label = pd.todo?.title ?? seg;
+			} else {
+				// Intermediate segment — always a space
+				label = spaceNameMap.get(pathSoFar) ?? (seg.charAt(0).toUpperCase() + seg.slice(1));
+			}
+
+			return { label, href, isLast };
+		});
+	});
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
@@ -35,7 +75,7 @@
 						<Breadcrumb.Item>
 							<Breadcrumb.Link href="/">Home</Breadcrumb.Link>
 						</Breadcrumb.Item>
-						{#each segments as seg}
+						{#each breadcrumbSegments() as seg}
 							<Breadcrumb.Separator />
 							<Breadcrumb.Item>
 								{#if seg.isLast}

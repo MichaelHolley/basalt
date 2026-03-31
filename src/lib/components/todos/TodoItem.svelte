@@ -25,7 +25,7 @@
 	<form
 		bind:this={toggleForm}
 		method="POST"
-		action="/todos/{todo.id}?/toggle"
+		action="/spaces/{todo.spaceId}/{todo.id}?/toggle"
 		use:enhance={() => ({ update }) => update({ invalidateAll: true })}
 	>
 		<input type="hidden" name="id" value={todo.id} />
@@ -35,7 +35,7 @@
 			class="shrink-0"
 		/>
 	</form>
-	<a href="/todos/{todo.id}" class="flex flex-1 items-center gap-3 min-w-0">
+	<a href="/spaces/{todo.spaceId}/{todo.id}" class="flex flex-1 items-center gap-3 min-w-0">
 		<span class="truncate {isDone ? 'text-muted-foreground line-through' : ''}">{todo.title}</span>
 		{#if todo.dueDate}
 			<span class="text-muted-foreground flex shrink-0 items-center gap-1 text-xs">
