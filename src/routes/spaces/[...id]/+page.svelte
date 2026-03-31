@@ -46,6 +46,12 @@
 	let newChildTitle = $state('');
 	let childInput = $state<HTMLInputElement | null>(null);
 
+	// New top-level todo on space view
+	let addingTodo = $state(false);
+	let newTodoTitle = $state('');
+	let newTodoInput = $state<HTMLInputElement | null>(null);
+	$effect(() => { if (addingTodo) newTodoInput?.focus(); });
+
 	function startEdit() {
 		editing = true;
 		if (data.type === 'note') editTitle = data.note.title;
@@ -61,10 +67,28 @@
 {#if data.type === 'space'}
 	<div class="flex flex-col gap-6">
 		<div>
-			<h2 class="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wider">Todos</h2>
-			{#if data.todos.length === 0}
+			<div class="mb-2 flex items-center justify-between">
+				<h2 class="text-muted-foreground text-xs font-medium uppercase tracking-wider">Todos</h2>
+				<Button variant="ghost" size="icon" class="size-5" onclick={() => addingTodo = true} title="New todo">
+					<Plus class="size-3" />
+				</Button>
+			</div>
+			{#if addingTodo}
+				<form
+					method="POST"
+					action="/todos?/create"
+					use:enhance={() => ({ update }) => { addingTodo = false; newTodoTitle = ''; update({ invalidateAll: true }); }}
+					class="mb-2 flex items-center gap-2"
+				>
+					<input type="hidden" name="spaceId" value={data.space.id} />
+					<Input name="title" bind:value={newTodoTitle} bind:ref={newTodoInput} placeholder="Todo title" class="flex-1" />
+					<Button type="submit" variant="ghost" size="icon" class="shrink-0 text-primary"><Check class="size-4" /></Button>
+					<Button type="button" variant="ghost" size="icon" class="shrink-0" onclick={() => addingTodo = false}><X class="size-4" /></Button>
+				</form>
+			{/if}
+			{#if data.todos.length === 0 && !addingTodo}
 				<p class="text-muted-foreground text-sm italic">No todos yet.</p>
-			{:else}
+			{:else if data.todos.length > 0}
 				<ul class="flex flex-col gap-0.5">
 					<TodoTree todos={data.todos} />
 				</ul>
