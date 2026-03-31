@@ -5,13 +5,14 @@
 	import { Button } from '$lib/components/ui/button';
 	import { House, Settings, Plus, Check, X } from '@lucide/svelte';
 	import SpaceTree from './space-tree.svelte';
-	import type { SpaceNode } from '$lib/server/db/utils';
+	import type { SpaceNode, Note } from '$lib/server/db/utils';
 
 	interface Props {
 		spaces?: SpaceNode[];
+		notesBySpace?: Record<string, Note[]>;
 	}
 
-	let { spaces = [] }: Props = $props();
+	let { spaces = [], notesBySpace = {} }: Props = $props();
 
 	let addingSpace = $state(false);
 	let newSpaceName = $state('');
@@ -92,7 +93,7 @@
 							</form>
 						</Sidebar.MenuItem>
 					{/if}
-					<SpaceTree {spaces} />
+					<SpaceTree {spaces} {notesBySpace} />
 				</Sidebar.Menu>
 			</Sidebar.GroupContent>
 		</Sidebar.Group>

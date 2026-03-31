@@ -85,7 +85,7 @@
 
     /* Interactive Colors */
     --crepe-color-hover: var(--accent); /* Hover state color */
-    --crepe-color-selected: var(--muted); /* Selected state color */
+    --crepe-color-selected: var(--ring); /* Selected state color */
     --crepe-color-inline-area: var(--input); /* Inline editing area color */
 
     --crepe-shadow-1: 0px 1px 2px 0px oklch(0 0 0 / 0.08);

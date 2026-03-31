@@ -1,7 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import { configExists } from '$lib/server/config';
 import { buildTree } from '$lib/server/db/utils';
-import { spaces } from '$lib/server/db/schema';
+import { spaces, notes } from '$lib/server/db/schema';
 import { asc } from 'drizzle-orm';
 import type { LayoutServerLoad } from './$types';
 
@@ -17,5 +17,13 @@ export const load: LayoutServerLoad = async ({ url }) => {
 
 	const { db } = await import('$lib/server/db/index.js');
 	const flat = db.select().from(spaces).orderBy(asc(spaces.id)).all();
-	return { spaces: buildTree(flat) };
+	const allNotes = db.select().from(notes).orderBy(asc(notes.title)).all();
+
+	const notesBySpace: Record<string, typeof allNotes> = {};
+	for (const note of allNotes) {
+		if (!notesBySpace[note.spaceId]) notesBySpace[note.spaceId] = [];
+		notesBySpace[note.spaceId].push(note);
+	}
+
+	return { spaces: buildTree(flat), notesBySpace };
 };
