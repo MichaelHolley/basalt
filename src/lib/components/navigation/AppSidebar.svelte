@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import * as Sidebar from '$lib/components/ui/sidebar';
+	import { Input } from '$lib/components/ui/input';
+	import { Button } from '$lib/components/ui/button';
 	import { House, Settings, Plus, Check, X } from '@lucide/svelte';
 	import SpaceTree from './space-tree.svelte';
 	import type { SpaceNode } from '$lib/server/db/utils';
@@ -13,6 +15,7 @@
 
 	let addingSpace = $state(false);
 	let newSpaceName = $state('');
+	let newSpaceInput = $state<HTMLInputElement | null>(null);
 
 	function startAdd() {
 		addingSpace = true;
@@ -24,9 +27,9 @@
 		newSpaceName = '';
 	}
 
-	function focusInput(node: HTMLInputElement) {
-		node.focus();
-	}
+	$effect(() => {
+		if (addingSpace) newSpaceInput?.focus();
+	});
 </script>
 
 <Sidebar.Root collapsible="icon">
@@ -54,14 +57,9 @@
 		<Sidebar.Group>
 			<Sidebar.GroupLabel class="flex items-center justify-between pr-1">
 				Spaces
-				<button
-					type="button"
-					onclick={startAdd}
-					class="hover:text-foreground text-muted-foreground rounded p-0.5 transition-colors"
-					title="New space"
-				>
+				<Button variant="ghost" size="icon" class="size-5" onclick={startAdd} title="New space">
 					<Plus class="size-3" />
-				</button>
+				</Button>
 			</Sidebar.GroupLabel>
 			<Sidebar.GroupContent>
 				<Sidebar.Menu>
@@ -78,22 +76,19 @@
 								}}
 								class="flex items-center gap-1 px-2 py-1"
 							>
-								<input
+								<Input
 									name="name"
 									bind:value={newSpaceName}
+									bind:ref={newSpaceInput}
 									placeholder="Space name"
-									class="border-input h-6 flex-1 rounded border px-1 text-xs"
-									use:focusInput
+									class="h-6 flex-1 text-xs"
 								/>
-								<button type="submit" class="text-primary hover:text-primary/80"
-									><Check class="size-3" /></button
-								>
-								<button
-									type="button"
-									onclick={cancelAdd}
-									class="text-muted-foreground hover:text-foreground"
-									><X class="size-3" /></button
-								>
+								<Button type="submit" variant="ghost" size="icon" class="size-5 text-primary">
+									<Check class="size-3" />
+								</Button>
+								<Button type="button" variant="ghost" size="icon" class="size-5" onclick={cancelAdd}>
+									<X class="size-3" />
+								</Button>
 							</form>
 						</Sidebar.MenuItem>
 					{/if}

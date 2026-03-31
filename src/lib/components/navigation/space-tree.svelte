@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import * as Sidebar from '$lib/components/ui/sidebar';
+	import { Input } from '$lib/components/ui/input';
+	import { Button } from '$lib/components/ui/button';
 	import { FolderOpen, Plus, Pencil, Trash2, Check, X } from '@lucide/svelte';
 	import type { SpaceNode } from '$lib/server/db/utils';
 	import SpaceTree from './space-tree.svelte';
@@ -16,6 +18,8 @@
 	let editingName = $state('');
 	let addingChildOf = $state<string | null>(null);
 	let newChildName = $state('');
+	let renameInput = $state<HTMLInputElement | null>(null);
+	let addChildInput = $state<HTMLInputElement | null>(null);
 
 	function startEdit(space: SpaceNode) {
 		editingId = space.id;
@@ -37,9 +41,13 @@
 		newChildName = '';
 	}
 
-	function focusInput(node: HTMLInputElement) {
-		node.focus();
-	}
+	$effect(() => {
+		if (editingId) renameInput?.focus();
+	});
+
+	$effect(() => {
+		if (addingChildOf) addChildInput?.focus();
+	});
 </script>
 
 {#each spaces as space}
@@ -57,14 +65,18 @@
 				class="flex items-center gap-1 px-2 py-1"
 			>
 				<input type="hidden" name="id" value={space.id} />
-				<input
+				<Input
 					name="name"
 					bind:value={editingName}
-					class="border-input h-6 flex-1 rounded border px-1 text-xs"
-					use:focusInput
+					bind:ref={renameInput}
+					class="h-6 flex-1 text-xs"
 				/>
-				<button type="submit" class="text-primary hover:text-primary/80"><Check class="size-3" /></button>
-				<button type="button" onclick={cancelEdit} class="text-muted-foreground hover:text-foreground"><X class="size-3" /></button>
+				<Button type="submit" variant="ghost" size="icon" class="size-5 text-primary">
+					<Check class="size-3" />
+				</Button>
+				<Button type="button" variant="ghost" size="icon" class="size-5" onclick={cancelEdit}>
+					<X class="size-3" />
+				</Button>
 			</form>
 		{:else}
 			<Sidebar.MenuButton class="group/space">
@@ -73,22 +85,26 @@
 						<FolderOpen class="size-4 shrink-0" />
 						<span class="flex-1 truncate">{space.name}</span>
 						<span class="ml-auto flex items-center gap-0.5 opacity-0 group-hover/space:opacity-100">
-							<button
+							<Button
 								type="button"
+								variant="ghost"
+								size="icon"
+								class="size-5"
 								onclick={(e) => { e.preventDefault(); startAddChild(space.id); }}
-								class="hover:text-foreground text-muted-foreground rounded p-0.5"
 								title="Add subspace"
 							>
 								<Plus class="size-3" />
-							</button>
-							<button
+							</Button>
+							<Button
 								type="button"
+								variant="ghost"
+								size="icon"
+								class="size-5"
 								onclick={(e) => { e.preventDefault(); startEdit(space); }}
-								class="hover:text-foreground text-muted-foreground rounded p-0.5"
 								title="Rename"
 							>
 								<Pencil class="size-3" />
-							</button>
+							</Button>
 							<form
 								method="POST"
 								action="/spaces?/delete"
@@ -96,14 +112,16 @@
 								class="contents"
 							>
 								<input type="hidden" name="id" value={space.id} />
-								<button
+								<Button
 									type="submit"
-									class="hover:text-destructive text-muted-foreground rounded p-0.5"
+									variant="ghost"
+									size="icon"
+									class="size-5 hover:text-destructive"
 									title="Delete"
 									onclick={(e) => { if (!confirm(`Delete "${space.name}" and all its contents?`)) e.preventDefault(); }}
 								>
 									<Trash2 class="size-3" />
-								</button>
+								</Button>
 							</form>
 						</span>
 					</a>
@@ -125,15 +143,19 @@
 				style="padding-left: {(depth + 1) * 12 + 8}px"
 			>
 				<input type="hidden" name="parentId" value={space.id} />
-				<input
+				<Input
 					name="name"
 					bind:value={newChildName}
+					bind:ref={addChildInput}
 					placeholder="Space name"
-					class="border-input h-6 flex-1 rounded border px-1 text-xs"
-					use:focusInput
+					class="h-6 flex-1 text-xs"
 				/>
-				<button type="submit" class="text-primary hover:text-primary/80"><Check class="size-3" /></button>
-				<button type="button" onclick={cancelAddChild} class="text-muted-foreground hover:text-foreground"><X class="size-3" /></button>
+				<Button type="submit" variant="ghost" size="icon" class="size-5 text-primary">
+					<Check class="size-3" />
+				</Button>
+				<Button type="button" variant="ghost" size="icon" class="size-5" onclick={cancelAddChild}>
+					<X class="size-3" />
+				</Button>
 			</form>
 		{/if}
 
