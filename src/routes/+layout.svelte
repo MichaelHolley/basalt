@@ -6,7 +6,9 @@
 	import AppSidebar from '$lib/components/navigation/AppSidebar.svelte';
 	import { page } from '$app/stores';
 
-	let { children } = $props();
+	import type { LayoutData } from './$types';
+
+	let { children, data }: { children: any; data: LayoutData } = $props();
 
 	let segments = $derived(
 		$page.url.pathname
@@ -23,7 +25,7 @@
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 
 <Sidebar.Provider>
-	<AppSidebar />
+	<AppSidebar spaces={data.spaces ?? []} />
 	<Sidebar.Inset>
 		<header class="flex h-12 shrink-0 items-center gap-2 border-b px-4">
 			<Sidebar.Trigger class="-ml-1" />

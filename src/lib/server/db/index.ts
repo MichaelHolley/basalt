@@ -14,6 +14,7 @@ function createDb() {
 	fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 
 	const sqlite = new Database(DB_PATH);
+	sqlite.exec('PRAGMA foreign_keys = ON');
 	const db = drizzle(sqlite, { schema });
 
 	migrate(db, { migrationsFolder: MIGRATIONS_PATH });
