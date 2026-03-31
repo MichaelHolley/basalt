@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
-	import { CheckSquare, Square, Calendar, Pencil, Trash2, Plus, Check, X } from '@lucide/svelte';
+	import { Calendar, Pencil, Trash2, Plus, Check, X } from '@lucide/svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -15,6 +16,19 @@
 	let newChildTitle = $state('');
 	let childInput = $state<HTMLInputElement | null>(null);
 
+	let toggleForm = $state<HTMLFormElement | null>(null);
+	let isDone = $state(data.todo.status === 'done');
+	$effect(() => { isDone = data.todo.status === 'done'; });
+
+	// Per-child toggle forms
+	let childToggleForms = $state<Record<string, HTMLFormElement | null>>({});
+	let childDoneState = $state<Record<string, boolean>>({});
+	$effect(() => {
+		for (const child of data.children) {
+			childDoneState[child.id] = child.status === 'done';
+		}
+	});
+
 	$effect(() => { if (editingTitle) titleInput?.focus(); });
 	$effect(() => { if (addingChild) childInput?.focus(); });
 </script>
@@ -22,15 +36,19 @@
 <div class="flex max-w-2xl flex-col gap-6">
 	<!-- Title + actions -->
 	<div class="flex items-start gap-3">
-		<form method="POST" action="?/toggle" use:enhance={() => ({ update }) => update({ invalidateAll: true })} class="mt-0.5">
+		<form
+			bind:this={toggleForm}
+			method="POST"
+			action="?/toggle"
+			use:enhance={() => ({ update }) => update({ invalidateAll: true })}
+			class="mt-1"
+		>
 			<input type="hidden" name="id" value={data.todo.id} />
-			<Button type="submit" variant="ghost" size="icon" class="size-6 shrink-0">
-				{#if data.todo.status === 'done'}
-					<CheckSquare class="text-primary size-5" />
-				{:else}
-					<Square class="text-muted-foreground size-5" />
-				{/if}
-			</Button>
+			<Checkbox
+				checked={isDone}
+				onCheckedChange={(v) => { isDone = !!v; toggleForm?.requestSubmit(); }}
+				class="shrink-0"
+			/>
 		</form>
 
 		{#if editingTitle}
@@ -46,7 +64,7 @@
 				<Button type="button" variant="ghost" size="icon" onclick={() => editingTitle = false}><X class="size-4" /></Button>
 			</form>
 		{:else}
-			<h1 class="flex-1 text-base font-semibold {data.todo.status === 'done' ? 'text-muted-foreground line-through' : ''}">
+			<h1 class="flex-1 text-base font-semibold {isDone ? 'text-muted-foreground line-through' : ''}">
 				{data.todo.title}
 			</h1>
 			<Button variant="ghost" size="icon" class="size-7 shrink-0" onclick={() => { editingTitle = true; editTitle = data.todo.title; }} title="Rename">
@@ -82,7 +100,7 @@
 			name="dueDate"
 			value={data.todo.dueDate ? new Date(data.todo.dueDate).toISOString().split('T')[0] : ''}
 			class="bg-background text-foreground border-input rounded-md border px-2 py-1 text-sm"
-			onchange={(e) => (e.target as HTMLFormElement).form?.requestSubmit()}
+			onchange={(e) => (e.target as HTMLInputElement).form?.requestSubmit()}
 		/>
 		{#if data.todo.dueDate}
 			<Button
@@ -91,10 +109,11 @@
 				size="icon"
 				class="size-6"
 				title="Clear due date"
-				onclick={() => {
-					const form = document.querySelector('form[action="?/setDueDate"]') as HTMLFormElement;
+				onclick={(e) => {
+					e.preventDefault();
+					const form = (e.target as HTMLElement).closest('form') as HTMLFormElement;
 					const input = form?.querySelector('input[name="dueDate"]') as HTMLInputElement;
-					if (input) input.value = '';
+					if (input) { input.value = ''; form.requestSubmit(); }
 				}}
 			>
 				<X class="size-3" />
@@ -131,18 +150,29 @@
 
 		{#each data.children as child}
 			<div class="flex items-center gap-2 rounded-md px-1 py-1">
-				<form method="POST" action="?/toggle" use:enhance={() => ({ update }) => update({ invalidateAll: true })}>
+				<form
+					bind:this={childToggleForms[child.id]}
+					method="POST"
+					action="?/toggle"
+					use:enhance={() => ({ update }) => update({ invalidateAll: true })}
+				>
 					<input type="hidden" name="id" value={child.id} />
-					<Button type="submit" variant="ghost" size="icon" class="size-5">
-						{#if child.status === 'done'}
-							<CheckSquare class="text-primary size-4" />
-						{:else}
-							<Square class="text-muted-foreground size-4" />
-						{/if}
-					</Button>
+					<Checkbox
+						checked={childDoneState[child.id] ?? child.status === 'done'}
+						onCheckedChange={(v) => { childDoneState[child.id] = !!v; childToggleForms[child.id]?.requestSubmit(); }}
+						class="shrink-0"
+					/>
 				</form>
-				<a href="/todos/{child.id}" class="flex-1 text-sm {child.status === 'done' ? 'text-muted-foreground line-through' : ''}">
-					{child.title}
+				<a href="/todos/{child.id}" class="flex flex-1 items-center gap-3 min-w-0 text-sm">
+					<span class="truncate {childDoneState[child.id] ?? child.status === 'done' ? 'text-muted-foreground line-through' : ''}">
+						{child.title}
+					</span>
+					{#if child.dueDate}
+						<span class="text-muted-foreground flex shrink-0 items-center gap-1 text-xs">
+							<Calendar class="size-3" />
+							{new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(child.dueDate))}
+						</span>
+					{/if}
 				</a>
 				<form method="POST" action="?/delete" use:enhance={() => ({ update }) => update({ invalidateAll: true })}>
 					<input type="hidden" name="id" value={child.id} />
