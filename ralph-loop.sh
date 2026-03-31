@@ -7,7 +7,7 @@ if [ -z "$1" ]; then
 fi
 
 for ((i=1; i<=$1; i++)); do
-  result=$(docker sandbox run claude --permission-mode acceptEdits -p "@progress.txt \
+  result=$(docker sandbox run claude --permission-mode bypassPermissions -p "@progress.txt \
   1. Use the gh cli and read issue #1 in the remote repo. \
   2. Find the next open implementation sub-issue. \
   3. Implement the task in the sub-issue. \
