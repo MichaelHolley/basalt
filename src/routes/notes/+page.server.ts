@@ -47,6 +47,6 @@ export const actions: Actions = {
 			updatedAt: now,
 		}).run();
 
-		redirect(302, `/notes/${id}`);
+		redirect(302, `/spaces/${id.replace(/\.md$/, '')}`);
 	},
 };

@@ -2,24 +2,38 @@ import { fail, error, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
 import fs from 'fs';
 import path from 'path';
-import { sql } from 'drizzle-orm';
+import { sql, eq, asc } from 'drizzle-orm';
 import { getConfig } from '$lib/server/config';
 import { slugify } from '$lib/server/db/utils';
-import { notes } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { spaces, notes } from '$lib/server/db/schema';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const { db } = await import('$lib/server/db/index.js');
 	const config = getConfig();
 
-	const note = db.select().from(notes).where(eq(notes.id, params.id)).get();
-	if (!note) error(404, 'Note not found');
+	// Check if this path is a space
+	const space = db.select().from(spaces).where(eq(spaces.id, params.id)).get();
+	if (space) {
+		const spaceNotes = db
+			.select()
+			.from(notes)
+			.where(eq(notes.spaceId, space.id))
+			.orderBy(asc(notes.title))
+			.all();
+		return { type: 'space' as const, space, notes: spaceNotes };
+	}
 
-	const filePath = path.join(config.vaultPath, ...note.id.split('/'));
-	const content = fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf-8') : '';
+	// Check if this path is a note (append .md)
+	const noteId = `${params.id}.md`;
+	const note = db.select().from(notes).where(eq(notes.id, noteId)).get();
+	if (note) {
+		const filePath = path.join(config.vaultPath, ...note.id.split('/'));
+		const content = fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf-8') : '';
+		return { type: 'note' as const, note, content };
+	}
 
-	return { note, content };
+	error(404, 'Not found');
 };
 
 const renameSchema = z.object({
@@ -54,7 +68,8 @@ export const actions: Actions = {
 
 		if (newId !== result.data.id) {
 			const existing = db.select().from(notes).where(eq(notes.id, newId)).get();
-			if (existing) return fail(400, { error: `A note named "${result.data.title}" already exists in this space` });
+			if (existing)
+				return fail(400, { error: `A note named "${result.data.title}" already exists in this space` });
 
 			const oldPath = path.join(config.vaultPath, ...result.data.id.split('/'));
 			const newPath = path.join(config.vaultPath, ...newId.split('/'));
@@ -78,7 +93,7 @@ export const actions: Actions = {
 				.run();
 		}
 
-		redirect(302, `/notes/${newId}`);
+		redirect(302, `/spaces/${newId.replace(/\.md$/, '')}`);
 	},
 
 	delete: async ({ request }) => {
@@ -98,6 +113,6 @@ export const actions: Actions = {
 
 		db.delete(notes).where(eq(notes.id, result.data.id)).run();
 
-		redirect(302, '/');
+		redirect(302, `/spaces/${note.spaceId}`);
 	},
 };
