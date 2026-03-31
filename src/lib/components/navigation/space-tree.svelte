@@ -3,17 +3,18 @@
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
-	import { FolderOpen, FileText, Plus, FilePlus, Pencil, Trash2, Check, X } from '@lucide/svelte';
-	import type { SpaceNode, Note } from '$lib/server/db/utils';
+	import { FolderOpen, FileText, CheckSquare, Square, FilePlus, ListTodo, Plus, Pencil, Trash2, Check, X } from '@lucide/svelte';
+	import type { SpaceNode, Note, Todo } from '$lib/server/db/utils';
 	import SpaceTree from './space-tree.svelte';
 
 	interface Props {
 		spaces: SpaceNode[];
 		notesBySpace?: Record<string, Note[]>;
+		todosBySpace?: Record<string, Todo[]>;
 		depth?: number;
 	}
 
-	let { spaces, notesBySpace = {}, depth = 0 }: Props = $props();
+	let { spaces, notesBySpace = {}, todosBySpace = {}, depth = 0 }: Props = $props();
 
 	let editingId = $state<string | null>(null);
 	let editingName = $state('');
@@ -21,9 +22,12 @@
 	let newChildName = $state('');
 	let addingNoteFor = $state<string | null>(null);
 	let newNoteName = $state('');
+	let addingTodoFor = $state<string | null>(null);
+	let newTodoName = $state('');
 	let renameInput = $state<HTMLInputElement | null>(null);
 	let addChildInput = $state<HTMLInputElement | null>(null);
 	let addNoteInput = $state<HTMLInputElement | null>(null);
+	let addTodoInput = $state<HTMLInputElement | null>(null);
 
 	function startEdit(space: SpaceNode) {
 		editingId = space.id;
@@ -55,6 +59,16 @@
 		newNoteName = '';
 	}
 
+	function startAddTodo(spaceId: string) {
+		addingTodoFor = spaceId;
+		newTodoName = '';
+	}
+
+	function cancelAddTodo() {
+		addingTodoFor = null;
+		newTodoName = '';
+	}
+
 	$effect(() => {
 		if (editingId) renameInput?.focus();
 	});
@@ -66,11 +80,16 @@
 	$effect(() => {
 		if (addingNoteFor) addNoteInput?.focus();
 	});
+
+	$effect(() => {
+		if (addingTodoFor) addTodoInput?.focus();
+	});
 </script>
 
 {#each spaces as space}
 	{@const spaceNotes = notesBySpace[space.id] ?? []}
-	{@const hasChildren = space.children.length > 0 || spaceNotes.length > 0 || addingNoteFor === space.id || addingChildOf === space.id}
+	{@const spaceTodos = todosBySpace[space.id] ?? []}
+	{@const hasChildren = space.children.length > 0 || spaceNotes.length > 0 || spaceTodos.length > 0 || addingNoteFor === space.id || addingTodoFor === space.id || addingChildOf === space.id}
 	<Sidebar.MenuItem>
 		{#if editingId === space.id}
 			<form
@@ -105,6 +124,16 @@
 						<FolderOpen class="size-4 shrink-0" />
 						<span class="flex-1 truncate">{space.name}</span>
 						<span class="ml-auto flex items-center gap-0.5 opacity-0 group-hover/space:opacity-100">
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon"
+								class="size-5"
+								onclick={(e) => { e.preventDefault(); startAddTodo(space.id); }}
+								title="New todo"
+							>
+								<ListTodo class="size-3" />
+							</Button>
 							<Button
 								type="button"
 								variant="ghost"
@@ -161,6 +190,54 @@
 
 		{#if hasChildren}
 			<Sidebar.MenuSub>
+				{#if addingTodoFor === space.id}
+					<Sidebar.MenuSubItem>
+						<form
+							method="POST"
+							action="/todos?/create"
+							use:enhance={() => {
+								return ({ update }) => {
+									cancelAddTodo();
+									update({ invalidateAll: true });
+								};
+							}}
+							class="flex items-center gap-1 px-2 py-1"
+						>
+							<input type="hidden" name="spaceId" value={space.id} />
+							<Input
+								name="title"
+								bind:value={newTodoName}
+								bind:ref={addTodoInput}
+								placeholder="Todo title"
+								class="h-6 flex-1 text-xs"
+							/>
+							<Button type="submit" variant="ghost" size="icon" class="size-5 text-primary">
+								<Check class="size-3" />
+							</Button>
+							<Button type="button" variant="ghost" size="icon" class="size-5" onclick={cancelAddTodo}>
+								<X class="size-3" />
+							</Button>
+						</form>
+					</Sidebar.MenuSubItem>
+				{/if}
+
+				{#each spaceTodos as todo}
+					<Sidebar.MenuSubItem>
+						<Sidebar.MenuSubButton>
+							{#snippet child({ props })}
+								<a href="/todos/{todo.id}" {...props}>
+									{#if todo.status === 'done'}
+										<CheckSquare class="text-primary size-3.5 shrink-0" />
+									{:else}
+										<Square class="text-muted-foreground size-3.5 shrink-0" />
+									{/if}
+									<span class="truncate {todo.status === 'done' ? 'line-through opacity-60' : ''}">{todo.title}</span>
+								</a>
+							{/snippet}
+						</Sidebar.MenuSubButton>
+					</Sidebar.MenuSubItem>
+				{/each}
+
 				{#if addingNoteFor === space.id}
 					<Sidebar.MenuSubItem>
 						<form
@@ -238,7 +315,7 @@
 				{/if}
 
 				{#if space.children.length > 0}
-					<SpaceTree spaces={space.children} {notesBySpace} depth={depth + 1} />
+					<SpaceTree spaces={space.children} {notesBySpace} {todosBySpace} depth={depth + 1} />
 				{/if}
 			</Sidebar.MenuSub>
 		{/if}

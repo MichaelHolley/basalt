@@ -3,10 +3,11 @@ import { asc } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
 import type { Db } from './index.js';
-import { spaces, notes } from './schema.js';
+import { spaces, notes, todos } from './schema.js';
 
 type Space = typeof spaces.$inferSelect;
 export type Note = typeof notes.$inferSelect;
+export type Todo = typeof todos.$inferSelect;
 export type SpaceNode = Space & { children: SpaceNode[] };
 
 // Assembles a flat list of spaces (ordered by path) into a nested tree.

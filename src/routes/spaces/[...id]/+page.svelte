@@ -3,7 +3,7 @@
 	import MilkdownEditor from '$lib/components/editor/milkdown-editor.svelte';
 	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
-	import { FileText, Pencil, Trash2, Check, X } from '@lucide/svelte';
+	import { FileText, CheckSquare, Square, Pencil, Trash2, Check, X } from '@lucide/svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -45,7 +45,27 @@
 	<div class="flex flex-col gap-6">
 		<div>
 			<h2 class="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wider">Todos</h2>
-			<p class="text-muted-foreground text-sm italic">No todos yet.</p>
+			{#if data.todos.length === 0}
+				<p class="text-muted-foreground text-sm italic">No todos yet.</p>
+			{:else}
+				<ul class="flex flex-col gap-1">
+					{#each data.todos as todo}
+						<li>
+							<a
+								href="/todos/{todo.id}"
+								class="hover:bg-accent flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors"
+							>
+								{#if todo.status === 'done'}
+									<CheckSquare class="text-primary size-4 shrink-0" />
+								{:else}
+									<Square class="text-muted-foreground size-4 shrink-0" />
+								{/if}
+								<span class="{todo.status === 'done' ? 'text-muted-foreground line-through' : ''}">{todo.title}</span>
+							</a>
+						</li>
+					{/each}
+				</ul>
+			{/if}
 		</div>
 
 		<div>

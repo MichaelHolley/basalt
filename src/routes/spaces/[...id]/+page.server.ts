@@ -5,7 +5,7 @@ import path from 'path';
 import { sql, eq, asc } from 'drizzle-orm';
 import { getConfig } from '$lib/server/config';
 import { slugify } from '$lib/server/db/utils';
-import { spaces, notes } from '$lib/server/db/schema';
+import { spaces, notes, todos } from '$lib/server/db/schema';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
@@ -15,13 +15,9 @@ export const load: PageServerLoad = async ({ params }) => {
 	// Check if this path is a space
 	const space = db.select().from(spaces).where(eq(spaces.id, params.id)).get();
 	if (space) {
-		const spaceNotes = db
-			.select()
-			.from(notes)
-			.where(eq(notes.spaceId, space.id))
-			.orderBy(asc(notes.title))
-			.all();
-		return { type: 'space' as const, space, notes: spaceNotes };
+		const spaceNotes = db.select().from(notes).where(eq(notes.spaceId, space.id)).orderBy(asc(notes.title)).all();
+		const spaceTodos = db.select().from(todos).where(eq(todos.spaceId, space.id)).orderBy(asc(todos.createdAt)).all();
+		return { type: 'space' as const, space, notes: spaceNotes, todos: spaceTodos };
 	}
 
 	// Check if this path is a note (append .md)
