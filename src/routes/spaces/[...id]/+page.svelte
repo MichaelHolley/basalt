@@ -12,6 +12,21 @@
 	let editTitle = $state('');
 	let titleInput = $state<HTMLInputElement | null>(null);
 
+	// Autosave
+	let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+
+	function handleContentChange(content: string) {
+		if (data.type !== 'note') return;
+		if (saveTimeout) clearTimeout(saveTimeout);
+		saveTimeout = setTimeout(() => {
+			fetch('/api/notes/autosave', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ id: data.note.id, content }),
+			});
+		}, 1000);
+	}
+
 	function startEdit() {
 		editing = true;
 		editTitle = data.type === 'note' ? data.note.title : '';
@@ -99,7 +114,7 @@
 			{/if}
 		</div>
 		<div class="min-h-0 flex-1">
-			<MilkdownEditor value={data.content} readonly={true} />
+			<MilkdownEditor value={data.content} onchange={handleContentChange} />
 		</div>
 	</div>
 {/if}
