@@ -212,7 +212,7 @@
     {/if}
 
     {#if hasChildren}
-      <Sidebar.MenuSub>
+      <Sidebar.MenuSub class="pr-0">
         {#if spaceTodos.length > 0}
           <Sidebar.MenuSubItem>
             <Sidebar.MenuSubButton>

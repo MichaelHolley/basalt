@@ -1,42 +1,39 @@
-# sv
+# Basalt
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+A local-first, single-user notes app. Notes are stored as plain `.md` files on disk inside a vault directory you choose. A SQLite database acts as a fast index for querying, search, and structured data — it's always a cache and can be deleted and rebuilt at any time.
 
-## Creating a project
+## Features
 
-If you're seeing this, you've probably already done this step. Congrats!
+- **Spaces** — organize notes and todos into nestable folders
+- **Notes** — WYSIWYG markdown editing via Milkdown, autosaved as `.md` files on disk
+- **Todos** — nested up to 3 levels deep, with status toggling and due dates
+- **Full-text search** — FTS5 index updated on every note save
+- **No auth, no cloud** — single user, runs entirely on your machine
 
-```sh
-# create a new project
-npx sv create my-app
+## Stack
+
+- [SvelteKit](https://kit.svelte.dev) — framework
+- [Drizzle ORM](https://orm.drizzle.team) + `bun:sqlite` — database
+- [Milkdown Crepe](https://milkdown.dev) — WYSIWYG markdown editor
+- [Tailwind CSS v4](https://tailwindcss.com) + [shadcn-svelte](https://www.shadcn-svelte.com) — styling
+
+## Setup
+
+**Prerequisites:** [Bun](https://bun.sh) ≥ 1.0
+
+```bash
+bun install
+bun dev
 ```
 
-To recreate this project with the same configuration:
+Open [http://localhost:5173](http://localhost:5173). On first launch you'll be prompted to choose a vault directory (defaults to `~/Documents/Basalt/`).
 
-```sh
-# recreate this project
-bun x sv@0.13.0 create --template minimal --types ts --add tailwindcss="plugins:none" --install bun basalt
-```
+## Data layout
 
-## Developing
+| Location | Contents |
+|---|---|
+| `~/Documents/Basalt/` *(or custom)* | `.md` note files mirroring the space folder structure |
+| `~/.config/basalt/basalt.db` | SQLite index: spaces, notes metadata, todos, FTS |
+| `~/.config/basalt/config.json` | Vault path |
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
-
-```sh
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+> The SQLite database is a cache — deleting it and restarting the app rebuilds the index from disk.
