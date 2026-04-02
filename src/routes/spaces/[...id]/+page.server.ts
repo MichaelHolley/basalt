@@ -181,8 +181,10 @@ export const actions: Actions = {
 			} finally {
 				db.run(sql`PRAGMA foreign_keys = ON`);
 			}
+			db.run(sql`UPDATE notes_fts SET note_id = ${newId}, title = ${result.data.title} WHERE note_id = ${result.data.id}`);
 		} else {
 			db.update(notes).set({ title: result.data.title, updatedAt: new Date() }).where(eq(notes.id, result.data.id)).run();
+			db.run(sql`UPDATE notes_fts SET title = ${result.data.title} WHERE note_id = ${result.data.id}`);
 		}
 
 		redirect(302, `/spaces/${newId.replace(/\.md$/, '')}`);
@@ -202,6 +204,7 @@ export const actions: Actions = {
 		const filePath = path.join(config.vaultPath, ...result.data.id.split('/'));
 		if (fs.existsSync(filePath)) fs.rmSync(filePath);
 		db.delete(notes).where(eq(notes.id, result.data.id)).run();
+		db.run(sql`DELETE FROM notes_fts WHERE note_id = ${result.data.id}`);
 
 		redirect(302, `/spaces/${note.spaceId}`);
 	},

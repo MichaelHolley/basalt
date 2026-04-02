@@ -2,6 +2,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
 import fs from 'fs';
 import path from 'path';
+import { sql } from 'drizzle-orm';
 import { getConfig } from '$lib/server/config';
 import { slugify } from '$lib/server/db/utils';
 import { spaces, notes } from '$lib/server/db/schema';
@@ -46,6 +47,8 @@ export const actions: Actions = {
 			createdAt: now,
 			updatedAt: now,
 		}).run();
+
+		db.run(sql`INSERT INTO notes_fts(note_id, title, body) VALUES (${id}, ${result.data.title}, '')`);
 
 		redirect(302, `/spaces/${id.replace(/\.md$/, '')}`);
 	},
