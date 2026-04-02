@@ -136,7 +136,10 @@
       <Sidebar.MenuButton class="group/space">
         {#snippet child({ props })}
           <a href="/spaces/{space.id}" {...props}>
-            <FolderOpen class="size-4 shrink-0" />
+            <FolderOpen class="size-4 shrink-0 group-data-[collapsible=icon]:hidden" />
+            <span class="bg-muted text-muted-foreground hidden size-5 shrink-0 items-center justify-center rounded text-[10px] font-semibold leading-none group-data-[collapsible=icon]:flex">
+              {space.name.slice(0, 2).toUpperCase()}
+            </span>
             <span class="flex-1 truncate">{space.name}</span>
             <span
               class="ml-auto flex items-center gap-0.5 opacity-0 group-hover/space:opacity-100"
