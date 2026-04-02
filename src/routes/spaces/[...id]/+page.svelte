@@ -4,7 +4,7 @@
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
-	import { FileText, Calendar, Pencil, Trash2, Plus, Check, X } from '@lucide/svelte';
+	import { FileText, Calendar, Pencil, Trash2, Plus, Check, X, Link, CheckSquare } from '@lucide/svelte';
 	import TodoTree from '$lib/components/todos/TodoTree.svelte';
 	import type { PageData } from './$types';
 
@@ -40,6 +40,11 @@
 			for (const child of data.children) childDoneState[child.id] = child.status === 'done';
 		}
 	});
+
+	// Relations
+	let addingRelation = $state(false);
+	let relationTargetType = $state<'note' | 'todo'>('note');
+	let relationTargetId = $state('');
 
 	// Todo child creation
 	let addingChild = $state(false);
@@ -142,8 +147,71 @@
 				</form>
 			{/if}
 		</div>
-		<div class="min-h-0 flex-1">
-			<MilkdownEditor value={data.content} onchange={handleContentChange} />
+		<div class="flex min-h-0 flex-1">
+			<div class="min-h-0 flex-1">
+				<MilkdownEditor value={data.content} onchange={handleContentChange} />
+			</div>
+			<!-- Relations panel -->
+			<div class="border-l w-56 shrink-0 overflow-y-auto px-3 py-3">
+				<div class="mb-2 flex items-center justify-between">
+					<h2 class="text-muted-foreground text-xs font-medium uppercase tracking-wider">Relations</h2>
+					<Button variant="ghost" size="icon" class="size-5" onclick={() => { addingRelation = !addingRelation; relationTargetId = ''; }} title="Add relation">
+						<Plus class="size-3" />
+					</Button>
+				</div>
+				{#if addingRelation}
+					<form method="POST" action="?/createRelation"
+						use:enhance={() => ({ update }) => { addingRelation = false; relationTargetId = ''; update({ invalidateAll: true }); }}
+						class="mb-2 flex flex-col gap-1.5">
+						<input type="hidden" name="currentType" value="note" />
+						<input type="hidden" name="currentId" value={data.note.id} />
+						<select name="targetType" bind:value={relationTargetType}
+							class="bg-background border-input w-full rounded-md border px-2 py-1 text-sm">
+							<option value="note">Note</option>
+							<option value="todo">Todo</option>
+						</select>
+						<select name="targetId" bind:value={relationTargetId}
+							class="bg-background border-input w-full rounded-md border px-2 py-1 text-sm" required>
+							<option value="">Select…</option>
+							{#if relationTargetType === 'note'}
+								{#each data.allNotes.filter(n => n.id !== data.note.id) as n}
+									<option value={n.id}>{n.title}</option>
+								{/each}
+							{:else}
+								{#each data.allTodos as t}
+									<option value={t.id}>{t.title}</option>
+								{/each}
+							{/if}
+						</select>
+						<div class="flex gap-1">
+							<Button type="submit" variant="ghost" size="icon" class="text-primary"><Check class="size-4" /></Button>
+							<Button type="button" variant="ghost" size="icon" onclick={() => addingRelation = false}><X class="size-4" /></Button>
+						</div>
+					</form>
+				{/if}
+				{#if data.relatedItems.length === 0 && !addingRelation}
+					<p class="text-muted-foreground text-xs italic">No relations.</p>
+				{:else}
+					<ul class="flex flex-col gap-0.5">
+						{#each data.relatedItems as item}
+							<li class="flex items-center gap-1.5">
+								{#if item.type === 'note'}
+									<FileText class="text-muted-foreground size-3.5 shrink-0" />
+								{:else}
+									<CheckSquare class="text-muted-foreground size-3.5 shrink-0" />
+								{/if}
+								<a href={item.href} class="hover:text-foreground text-muted-foreground min-w-0 flex-1 truncate text-xs">{item.title}</a>
+								<form method="POST" action="?/deleteRelation" use:enhance={() => ({ update }) => update({ invalidateAll: true })}>
+									<input type="hidden" name="id" value={item.relationId} />
+									<Button type="submit" variant="ghost" size="icon" class="size-5 shrink-0 hover:text-destructive" title="Remove relation">
+										<X class="size-3" />
+									</Button>
+								</form>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			</div>
 		</div>
 	</div>
 
@@ -257,6 +325,66 @@
 					</form>
 				</div>
 			{/each}
+		</div>
+
+		<!-- Relations panel -->
+		<div class="flex flex-col gap-1">
+			<div class="flex items-center justify-between">
+				<h2 class="text-muted-foreground text-xs font-medium uppercase tracking-wider">Relations</h2>
+				<Button variant="ghost" size="icon" class="size-6" onclick={() => { addingRelation = !addingRelation; relationTargetId = ''; }} title="Add relation">
+					<Plus class="size-3.5" />
+				</Button>
+			</div>
+			{#if addingRelation}
+				<form method="POST" action="?/createRelation"
+					use:enhance={() => ({ update }) => { addingRelation = false; relationTargetId = ''; update({ invalidateAll: true }); }}
+					class="flex items-center gap-2">
+					<input type="hidden" name="currentType" value="todo" />
+					<input type="hidden" name="currentId" value={data.todo.id} />
+					<select name="targetType" bind:value={relationTargetType}
+						class="bg-background border-input rounded-md border px-2 py-1 text-sm">
+						<option value="note">Note</option>
+						<option value="todo">Todo</option>
+					</select>
+					<select name="targetId" bind:value={relationTargetId}
+						class="bg-background border-input min-w-0 flex-1 rounded-md border px-2 py-1 text-sm" required>
+						<option value="">Select…</option>
+						{#if relationTargetType === 'note'}
+							{#each data.allNotes as n}
+								<option value={n.id}>{n.title}</option>
+							{/each}
+						{:else}
+							{#each data.allTodos.filter(t => t.id !== data.todo.id) as t}
+								<option value={t.id}>{t.title}</option>
+							{/each}
+						{/if}
+					</select>
+					<Button type="submit" variant="ghost" size="icon" class="shrink-0 text-primary"><Check class="size-4" /></Button>
+					<Button type="button" variant="ghost" size="icon" class="shrink-0" onclick={() => addingRelation = false}><X class="size-4" /></Button>
+				</form>
+			{/if}
+			{#if data.relatedItems.length === 0 && !addingRelation}
+				<p class="text-muted-foreground text-sm italic">No relations.</p>
+			{:else}
+				<ul class="flex flex-col gap-0.5">
+					{#each data.relatedItems as item}
+						<li class="flex items-center gap-2 rounded-md px-1 py-0.5">
+							{#if item.type === 'note'}
+								<FileText class="text-muted-foreground size-3.5 shrink-0" />
+							{:else}
+								<CheckSquare class="text-muted-foreground size-3.5 shrink-0" />
+							{/if}
+							<a href={item.href} class="hover:text-foreground text-muted-foreground flex-1 truncate text-sm">{item.title}</a>
+							<form method="POST" action="?/deleteRelation" use:enhance={() => ({ update }) => update({ invalidateAll: true })}>
+								<input type="hidden" name="id" value={item.relationId} />
+								<Button type="submit" variant="ghost" size="icon" class="size-5 hover:text-destructive" title="Remove relation">
+									<X class="size-3" />
+								</Button>
+							</form>
+						</li>
+					{/each}
+				</ul>
+			{/if}
 		</div>
 	</div>
 {/if}

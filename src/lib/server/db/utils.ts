@@ -3,7 +3,18 @@ import { asc } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
 import type { Db } from './index.js';
-import { spaces, notes, todos } from './schema.js';
+import { spaces, notes, todos, relations } from './schema.js';
+
+export type RelationSide = { type: 'note' | 'todo'; id: string };
+export type Relation = typeof relations.$inferSelect;
+
+// Normalizes a relation pair so (A→B) and (B→A) always produce the same stored row.
+// Sorts lexicographically by "type:id" key so the lesser key is always the source.
+export function normalizeRelation(a: RelationSide, b: RelationSide): [RelationSide, RelationSide] {
+	const keyA = `${a.type}:${a.id}`;
+	const keyB = `${b.type}:${b.id}`;
+	return keyA <= keyB ? [a, b] : [b, a];
+}
 
 type Space = typeof spaces.$inferSelect;
 export type Note = typeof notes.$inferSelect;

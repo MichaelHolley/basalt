@@ -3,10 +3,10 @@ import { z } from 'zod';
 import fs from 'fs';
 import path from 'path';
 import { nanoid } from 'nanoid';
-import { sql, eq, asc } from 'drizzle-orm';
+import { sql, eq, asc, or, and } from 'drizzle-orm';
 import { getConfig } from '$lib/server/config';
-import { slugify, buildTodoTree } from '$lib/server/db/utils';
-import { spaces, notes, todos } from '$lib/server/db/schema';
+import { slugify, buildTodoTree, normalizeRelation } from '$lib/server/db/utils';
+import { spaces, notes, todos, relations } from '$lib/server/db/schema';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
@@ -27,7 +27,36 @@ export const load: PageServerLoad = async ({ params }) => {
 	if (note) {
 		const filePath = path.join(config.vaultPath, ...note.id.split('/'));
 		const content = fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf-8') : '';
-		return { type: 'note' as const, note, content };
+
+		const noteRelations = db.select().from(relations).where(
+			or(
+				and(eq(relations.sourceType, 'note'), eq(relations.sourceId, note.id)),
+				and(eq(relations.targetType, 'note'), eq(relations.targetId, note.id)),
+			)
+		).all();
+
+		const relatedItems = noteRelations.map((r) => {
+			const isSource = r.sourceType === 'note' && r.sourceId === note.id;
+			const otherType = isSource ? r.targetType : r.sourceType;
+			const otherId = isSource ? r.targetId : r.sourceId;
+			if (otherType === 'note') {
+				const related = db.select().from(notes).where(eq(notes.id, otherId)).get();
+				return related ? { relationId: r.id, type: 'note' as const, id: related.id, title: related.title, href: `/spaces/${related.id.replace(/\.md$/, '')}` } : null;
+			} else {
+				const related = db.select().from(todos).where(eq(todos.id, otherId)).get();
+				return related ? { relationId: r.id, type: 'todo' as const, id: related.id, title: related.title, href: `/spaces/${related.spaceId}/${related.id}` } : null;
+			}
+		}).filter(Boolean) as { relationId: string; type: 'note' | 'todo'; id: string; title: string; href: string }[];
+
+		const rootSpace = note.spaceId.split('/')[0];
+		const allNotes = db.select().from(notes).where(
+			or(eq(notes.spaceId, rootSpace), sql`${notes.spaceId} LIKE ${rootSpace + '/%'}`)
+		).orderBy(asc(notes.title)).all();
+		const allTodos = db.select().from(todos).where(
+			or(eq(todos.spaceId, rootSpace), sql`${todos.spaceId} LIKE ${rootSpace + '/%'}`)
+		).orderBy(asc(todos.createdAt)).all();
+
+		return { type: 'note' as const, note, content, relatedItems, allNotes, allTodos };
 	}
 
 	// Check if the last segment is a todo nanoid
@@ -36,7 +65,36 @@ export const load: PageServerLoad = async ({ params }) => {
 	const todo = db.select().from(todos).where(eq(todos.id, todoId)).get();
 	if (todo) {
 		const children = db.select().from(todos).where(eq(todos.parentId, todoId)).orderBy(asc(todos.createdAt)).all();
-		return { type: 'todo' as const, todo, children };
+
+		const todoRelations = db.select().from(relations).where(
+			or(
+				and(eq(relations.sourceType, 'todo'), eq(relations.sourceId, todo.id)),
+				and(eq(relations.targetType, 'todo'), eq(relations.targetId, todo.id)),
+			)
+		).all();
+
+		const relatedItems = todoRelations.map((r) => {
+			const isSource = r.sourceType === 'todo' && r.sourceId === todo.id;
+			const otherType = isSource ? r.targetType : r.sourceType;
+			const otherId = isSource ? r.targetId : r.sourceId;
+			if (otherType === 'note') {
+				const related = db.select().from(notes).where(eq(notes.id, otherId)).get();
+				return related ? { relationId: r.id, type: 'note' as const, id: related.id, title: related.title, href: `/spaces/${related.id.replace(/\.md$/, '')}` } : null;
+			} else {
+				const related = db.select().from(todos).where(eq(todos.id, otherId)).get();
+				return related ? { relationId: r.id, type: 'todo' as const, id: related.id, title: related.title, href: `/spaces/${related.spaceId}/${related.id}` } : null;
+			}
+		}).filter(Boolean) as { relationId: string; type: 'note' | 'todo'; id: string; title: string; href: string }[];
+
+		const rootSpace = todo.spaceId.split('/')[0];
+		const allNotes = db.select().from(notes).where(
+			or(eq(notes.spaceId, rootSpace), sql`${notes.spaceId} LIKE ${rootSpace + '/%'}`)
+		).orderBy(asc(notes.title)).all();
+		const allTodos = db.select().from(todos).where(
+			or(eq(todos.spaceId, rootSpace), sql`${todos.spaceId} LIKE ${rootSpace + '/%'}`)
+		).orderBy(asc(todos.createdAt)).all();
+
+		return { type: 'todo' as const, todo, children, relatedItems, allNotes, allTodos };
 	}
 
 	error(404, 'Not found');
@@ -74,6 +132,17 @@ const todoDeleteSchema = z.object({
 const createChildSchema = z.object({
 	title: z.string().min(1, 'Title is required'),
 	parentId: z.string().min(1),
+});
+
+const createRelationSchema = z.object({
+	currentType: z.enum(['note', 'todo']),
+	currentId: z.string().min(1),
+	targetType: z.enum(['note', 'todo']),
+	targetId: z.string().min(1),
+});
+
+const deleteRelationSchema = z.object({
+	id: z.string().min(1),
 });
 
 // ── Actions ───────────────────────────────────────────────────────────────────
@@ -198,6 +267,60 @@ export const actions: Actions = {
 		const id = nanoid();
 		const now = new Date();
 		db.insert(todos).values({ id, spaceId: parent.spaceId, parentId: result.data.parentId, title: result.data.title, status: 'open', createdAt: now, updatedAt: now }).run();
+		return { success: true };
+	},
+
+	createRelation: async ({ request }) => {
+		const data = await request.formData();
+		const result = createRelationSchema.safeParse({
+			currentType: data.get('currentType'),
+			currentId: data.get('currentId'),
+			targetType: data.get('targetType'),
+			targetId: data.get('targetId'),
+		});
+		if (!result.success) return fail(400, { error: result.error.issues[0].message });
+
+		const { currentType, currentId, targetType, targetId } = result.data;
+
+		if (currentType === targetType && currentId === targetId) {
+			return fail(400, { error: 'Cannot create a relation to itself' });
+		}
+
+		const { db } = await import('$lib/server/db/index.js');
+		const [source, target] = normalizeRelation(
+			{ type: currentType, id: currentId },
+			{ type: targetType, id: targetId },
+		);
+
+		const existing = db.select().from(relations).where(
+			and(
+				eq(relations.sourceType, source.type),
+				eq(relations.sourceId, source.id),
+				eq(relations.targetType, target.type),
+				eq(relations.targetId, target.id),
+			)
+		).get();
+		if (existing) return fail(400, { error: 'Relation already exists' });
+
+		db.insert(relations).values({
+			id: nanoid(),
+			sourceType: source.type,
+			sourceId: source.id,
+			targetType: target.type,
+			targetId: target.id,
+			createdAt: new Date(),
+		}).run();
+
+		return { success: true };
+	},
+
+	deleteRelation: async ({ request }) => {
+		const data = await request.formData();
+		const result = deleteRelationSchema.safeParse({ id: data.get('id') });
+		if (!result.success) return fail(400, { error: result.error.issues[0].message });
+
+		const { db } = await import('$lib/server/db/index.js');
+		db.delete(relations).where(eq(relations.id, result.data.id)).run();
 		return { success: true };
 	},
 
