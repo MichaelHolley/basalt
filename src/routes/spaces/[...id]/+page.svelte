@@ -149,7 +149,9 @@
 		</div>
 		<div class="flex min-h-0 flex-1">
 			<div class="min-h-0 flex-1">
-				<MilkdownEditor value={data.content} onchange={handleContentChange} />
+				{#key data.note.id}
+					<MilkdownEditor value={data.content} onchange={handleContentChange} />
+				{/key}
 			</div>
 			<!-- Relations panel -->
 			<div class="border-l w-56 shrink-0 overflow-y-auto px-3 py-3">
