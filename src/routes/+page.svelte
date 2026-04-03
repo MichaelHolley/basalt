@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SvelteMap, SvelteDate } from 'svelte/reactivity';
 	import { FileText, CheckSquare } from '@lucide/svelte';
 	import { cn } from '$lib/utils';
 	import type { PageData } from './$types';
@@ -13,8 +14,8 @@
 	// ── Functions ──────────────────────────────────────────────────────────────
 	function flattenSpaces(
 		nodes: SpaceNode[],
-		map: Map<string, string> = new Map()
-	): Map<string, string> {
+		map: SvelteMap<string, string> = new SvelteMap()
+	): SvelteMap<string, string> {
 		for (const node of nodes) {
 			map.set(node.id, node.name);
 			flattenSpaces(node.children, map);
@@ -39,7 +40,7 @@
 	function getDueBadge(dueDate: Date | null | undefined): BadgeKind {
 		if (!dueDate) return null;
 		const due = new Date(dueDate);
-		const todayStart = new Date();
+		const todayStart = new SvelteDate();
 		todayStart.setHours(0, 0, 0, 0);
 		const todayEnd = new Date(todayStart.getTime() + 86_400_000);
 		if (due < todayStart) return 'overdue';
@@ -60,7 +61,7 @@
 			<p class="text-sm text-muted-foreground italic">No notes yet.</p>
 		{:else}
 			<ul class="flex flex-col gap-0.5">
-				{#each data.recentNotes as note}
+				{#each data.recentNotes as note (note.id)}
 					{@const spaceName = spaceNameMap.get(note.spaceId) ?? note.spaceId}
 					{@const href = `/spaces/${note.id.replace(/\.md$/, '')}`}
 					<li>
@@ -93,7 +94,7 @@
 			<p class="text-sm text-muted-foreground italic">Nothing open — great work!</p>
 		{:else}
 			<ul class="flex flex-col gap-0.5">
-				{#each data.openTodos as todo}
+				{#each data.openTodos as todo (todo.id)}
 					{@const spaceName = spaceNameMap.get(todo.spaceId) ?? todo.spaceId}
 					{@const href = `/spaces/${todo.spaceId}/${todo.id}`}
 					{@const badge = getDueBadge(todo.dueDate)}

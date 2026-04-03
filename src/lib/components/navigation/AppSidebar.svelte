@@ -94,7 +94,7 @@
 			</div>
 			{#if searchResults.length > 0}
 				<ul class="mt-1 flex flex-col rounded-md border border-border bg-popover py-1 shadow-md">
-					{#each searchResults as result}
+					{#each searchResults as result (result.note_id)}
 						<li>
 							<a
 								href="/spaces/{result.note_id.replace(/\.md$/, '')}"
@@ -107,6 +107,7 @@
 								</span>
 								{#if result.snippet}
 									<span class="line-clamp-1 pl-4.5 text-[10px] text-muted-foreground">
+										<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 										{@html result.snippet}
 									</span>
 								{/if}

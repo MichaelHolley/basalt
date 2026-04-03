@@ -1,18 +1,20 @@
 <script lang="ts">
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
+	import { SvelteMap } from 'svelte/reactivity';
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
 	import AppSidebar from '$lib/components/navigation/AppSidebar.svelte';
 	import { page } from '$app/stores';
 
+	import type { Snippet } from 'svelte';
 	import type { LayoutData } from './$types';
 	import type { SpaceNode } from '$lib/server/db/utils';
 
-	let { children, data }: { children: any; data: LayoutData } = $props();
+	let { children, data }: { children: Snippet; data: LayoutData } = $props();
 
 	// Flatten the space tree into a id → name map for breadcrumb label resolution
-	function flattenSpaces(nodes: SpaceNode[], map: Map<string, string> = new Map()) {
+	function flattenSpaces(nodes: SpaceNode[], map: SvelteMap<string, string> = new SvelteMap()) {
 		for (const node of nodes) {
 			map.set(node.id, node.name);
 			flattenSpaces(node.children, map);
@@ -38,7 +40,7 @@
 		const spaceParts = parts.slice(1);
 		if (spaceParts.length === 0) return [];
 
-		const pd = $page.data as Record<string, any>;
+		const pd = $page.data as Record<string, unknown>;
 
 		return spaceParts.map((seg, i, arr) => {
 			const isLast = i === arr.length - 1;
@@ -47,11 +49,11 @@
 
 			let label: string;
 			if (isLast && pd.type === 'space') {
-				label = pd.space?.name ?? seg;
+				label = (pd.space as { name?: string } | undefined)?.name ?? seg;
 			} else if (isLast && pd.type === 'note') {
-				label = pd.note?.title ?? seg;
+				label = (pd.note as { title?: string } | undefined)?.title ?? seg;
 			} else if (isLast && pd.type === 'todo') {
-				label = pd.todo?.title ?? seg;
+				label = (pd.todo as { title?: string } | undefined)?.title ?? seg;
 			} else {
 				// Intermediate segment — always a space
 				label = spaceNameMap.get(pathSoFar) ?? seg.charAt(0).toUpperCase() + seg.slice(1);
@@ -75,7 +77,7 @@
 						<Breadcrumb.Item>
 							<Breadcrumb.Link href="/">Home</Breadcrumb.Link>
 						</Breadcrumb.Item>
-						{#each breadcrumbSegments() as seg}
+						{#each breadcrumbSegments() as seg (seg.href)}
 							<Breadcrumb.Separator />
 							<Breadcrumb.Item>
 								{#if seg.isLast}

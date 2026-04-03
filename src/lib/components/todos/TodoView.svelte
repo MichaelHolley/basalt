@@ -218,7 +218,7 @@
 			<p class="text-sm text-muted-foreground italic">No subtasks.</p>
 		{/if}
 
-		{#each children as child}
+		{#each children as child (child.id)}
 			<div
 				class="flex items-center gap-2 rounded-md px-1 py-1"
 				style="padding-left: {(child.depth - 1) * 1.25}rem"

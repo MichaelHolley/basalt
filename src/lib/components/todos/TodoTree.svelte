@@ -11,7 +11,7 @@
 	let { todos, depth = 0 }: Props = $props();
 </script>
 
-{#each todos as todo}
+{#each todos as todo (todo.id)}
 	<li style="padding-left: {depth * 1.25}rem">
 		<TodoItem {todo} />
 		{#if todo.children.length > 0}

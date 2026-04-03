@@ -84,7 +84,7 @@
 			<p class="text-sm text-muted-foreground italic">No notes yet.</p>
 		{:else}
 			<ul class="flex flex-col gap-1">
-				{#each notes as note}
+				{#each notes as note (note.id)}
 					<li>
 						<a
 							href="/spaces/{note.id.replace(/\.md$/, '')}"

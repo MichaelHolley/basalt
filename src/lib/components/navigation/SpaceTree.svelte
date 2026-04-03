@@ -68,7 +68,7 @@
 	});
 </script>
 
-{#each spaces as space}
+{#each spaces as space (space.id)}
 	{@const spaceNotes = notesBySpace[space.id] ?? []}
 	{@const hasChildren =
 		space.children.length > 0 ||
@@ -221,7 +221,7 @@
 					</Sidebar.MenuSubItem>
 				{/if}
 
-				{#each spaceNotes as note}
+				{#each spaceNotes as note (note.id)}
 					<Sidebar.MenuSubItem>
 						<Sidebar.MenuSubButton>
 							{#snippet child({ props })}

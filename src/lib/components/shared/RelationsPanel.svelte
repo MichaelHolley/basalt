@@ -81,11 +81,11 @@
 			>
 				<option value="">Select…</option>
 				{#if relationTargetType === 'note'}
-					{#each filteredNotes as n}
+					{#each filteredNotes as n (n.id)}
 						<option value={n.id}>{n.title}</option>
 					{/each}
 				{:else}
-					{#each filteredTodos as t}
+					{#each filteredTodos as t (t.id)}
 						<option value={t.id}>{t.title}</option>
 					{/each}
 				{/if}
@@ -105,7 +105,7 @@
 		<p class="text-xs text-muted-foreground italic">No relations.</p>
 	{:else}
 		<ul class="flex flex-col gap-0.5">
-			{#each relatedItems as item}
+			{#each relatedItems as item (item.relationId)}
 				<li class="flex items-center gap-1.5">
 					{#if item.type === 'note'}
 						<FileText class="size-3.5 shrink-0 text-muted-foreground" />
