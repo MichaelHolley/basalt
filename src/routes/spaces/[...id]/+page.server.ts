@@ -203,6 +203,7 @@ export const actions: Actions = {
 
 		const filePath = path.join(config.vaultPath, ...result.data.id.split('/'));
 		if (fs.existsSync(filePath)) fs.rmSync(filePath);
+		db.run(sql`DELETE FROM relations WHERE (source_type = 'note' AND source_id = ${result.data.id}) OR (target_type = 'note' AND target_id = ${result.data.id})`);
 		db.delete(notes).where(eq(notes.id, result.data.id)).run();
 		db.run(sql`DELETE FROM notes_fts WHERE note_id = ${result.data.id}`);
 
@@ -337,6 +338,22 @@ export const actions: Actions = {
 		if (!todo) return fail(404, { error: 'Todo not found' });
 
 		db.transaction((tx) => {
+			// Clean up relations for this todo and all descendants before deleting them
+			tx.run(sql`
+				DELETE FROM relations WHERE
+					(source_type = 'todo' AND source_id IN (
+						SELECT id FROM todos WHERE id = ${result.data.id}
+						UNION SELECT id FROM todos WHERE parent_id = ${result.data.id}
+						UNION SELECT id FROM todos WHERE parent_id IN (SELECT id FROM todos WHERE parent_id = ${result.data.id})
+						UNION SELECT id FROM todos WHERE parent_id IN (SELECT id FROM todos WHERE parent_id IN (SELECT id FROM todos WHERE parent_id = ${result.data.id}))
+					)) OR
+					(target_type = 'todo' AND target_id IN (
+						SELECT id FROM todos WHERE id = ${result.data.id}
+						UNION SELECT id FROM todos WHERE parent_id = ${result.data.id}
+						UNION SELECT id FROM todos WHERE parent_id IN (SELECT id FROM todos WHERE parent_id = ${result.data.id})
+						UNION SELECT id FROM todos WHERE parent_id IN (SELECT id FROM todos WHERE parent_id IN (SELECT id FROM todos WHERE parent_id = ${result.data.id}))
+					))
+			`);
 			tx.run(sql`DELETE FROM todos WHERE parent_id IN (SELECT id FROM todos WHERE parent_id IN (SELECT id FROM todos WHERE parent_id = ${result.data.id}))`);
 			tx.run(sql`DELETE FROM todos WHERE parent_id IN (SELECT id FROM todos WHERE parent_id = ${result.data.id})`);
 			tx.run(sql`DELETE FROM todos WHERE parent_id = ${result.data.id}`);

@@ -93,6 +93,12 @@ export function renameSpace(db: Db, oldId: string, newName: string, vaultPath: s
 				WHERE id LIKE ${oldId + '/%'}
 			`);
 
+			// Keep FTS note_id in sync with the updated note ids
+			tx.run(sql`
+				UPDATE notes_fts SET note_id = ${newId} || substr(note_id, ${prefixLen + 1})
+				WHERE note_id LIKE ${oldId + '/%'}
+			`);
+
 			// Update ids and parent_ids of all descendant spaces
 			tx.run(sql`
 				UPDATE spaces SET

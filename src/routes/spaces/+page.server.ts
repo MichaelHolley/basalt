@@ -5,7 +5,7 @@ import path from 'path';
 import { getConfig } from '$lib/server/config';
 import { slugify, renameSpace } from '$lib/server/db/utils';
 import { spaces, notes } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type { Actions } from './$types';
 
 const createSchema = z.object({
@@ -86,6 +86,12 @@ export const actions: Actions = {
 			fs.rmSync(folderPath, { recursive: true, force: true });
 		}
 
+		// Clean FTS entries for all notes in this space and its subspaces before cascade delete
+		db.run(sql`
+			DELETE FROM notes_fts WHERE note_id IN (
+				SELECT id FROM notes WHERE space_id = ${result.data.id} OR space_id LIKE ${result.data.id + '/%'}
+			)
+		`);
 		db.delete(spaces).where(eq(spaces.id, result.data.id)).run();
 		return { success: true };
 	},
