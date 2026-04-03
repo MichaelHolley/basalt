@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { eq, asc, or, sql } from "drizzle-orm";
+import { eq, asc, desc, or, sql } from "drizzle-orm";
 import { db } from "$lib/server/db";
 import { notes } from "$lib/server/db/schema";
 import { slugify } from "$lib/server/db/utils";
@@ -105,6 +105,10 @@ export function deleteNote(id: string, vaultPath: string): string {
   db.run(sql`DELETE FROM notes_fts WHERE note_id = ${id}`);
 
   return note.spaceId;
+}
+
+export function getRecentNotes(limit: number) {
+  return db.select().from(notes).orderBy(desc(notes.updatedAt)).limit(limit).all();
 }
 
 export function saveNoteContent(id: string, content: string, vaultPath: string): void {

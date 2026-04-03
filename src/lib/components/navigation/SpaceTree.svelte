@@ -6,7 +6,6 @@
   import {
     FolderOpen,
     FileText,
-    ListTodo,
     FilePlus,
     Plus,
     Pencil,
@@ -14,20 +13,18 @@
     Check,
     X,
   } from "@lucide/svelte";
-  import type { SpaceNode, Note, Todo } from "$lib/server/db/utils";
+  import type { SpaceNode, Note } from "$lib/server/db/utils";
   import SpaceTree from "$lib/components/navigation/SpaceTree.svelte";
 
   interface Props {
     spaces: SpaceNode[];
     notesBySpace?: Record<string, Note[]>;
-    todosBySpace?: Record<string, Todo[]>;
     depth?: number;
   }
 
   let {
     spaces,
     notesBySpace = {},
-    todosBySpace = {},
     depth = 0,
   }: Props = $props();
 
@@ -86,12 +83,9 @@
 
 {#each spaces as space}
   {@const spaceNotes = notesBySpace[space.id] ?? []}
-  {@const spaceTodos = todosBySpace[space.id] ?? []}
-  {@const openTodoCount = spaceTodos.filter((t) => t.status === "open").length}
   {@const hasChildren =
     space.children.length > 0 ||
     spaceNotes.length > 0 ||
-    spaceTodos.length > 0 ||
     addingNoteFor === space.id ||
     addingChildOf === space.id}
   <Sidebar.MenuItem>
@@ -216,24 +210,6 @@
 
     {#if hasChildren}
       <Sidebar.MenuSub class="pr-0">
-        {#if spaceTodos.length > 0}
-          <Sidebar.MenuSubItem>
-            <Sidebar.MenuSubButton>
-              {#snippet child({ props })}
-                <a href="/spaces/{space.id}" {...props}>
-                  <ListTodo class="size-3.5 shrink-0" />
-                  <span class="flex-1">Todos</span>
-                  {#if openTodoCount > 0}
-                    <span class="text-muted-foreground text-xs"
-                      >{openTodoCount}</span
-                    >
-                  {/if}
-                </a>
-              {/snippet}
-            </Sidebar.MenuSubButton>
-          </Sidebar.MenuSubItem>
-        {/if}
-
         {#if addingNoteFor === space.id}
           <Sidebar.MenuSubItem>
             <form
@@ -336,7 +312,6 @@
           <SpaceTree
             spaces={space.children}
             {notesBySpace}
-            {todosBySpace}
             depth={depth + 1}
           />
         {/if}

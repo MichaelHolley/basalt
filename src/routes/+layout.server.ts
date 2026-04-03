@@ -3,7 +3,6 @@ import { configExists } from "$lib/server/config";
 import { buildTree } from "$lib/server/db/utils";
 import { getAllSpaces } from "$lib/server/service/space.service";
 import { getAllNotes } from "$lib/server/service/note.service";
-import { getTopLevelTodos } from "$lib/server/service/todo.service";
 import type { LayoutServerLoad } from "./$types";
 
 export const load: LayoutServerLoad = async ({ url }) => {
@@ -18,7 +17,6 @@ export const load: LayoutServerLoad = async ({ url }) => {
 
   const flat = getAllSpaces();
   const allNotes = getAllNotes();
-  const topLevelTodos = getTopLevelTodos();
 
   const notesBySpace: Record<string, typeof allNotes> = {};
   for (const note of allNotes) {
@@ -26,11 +24,5 @@ export const load: LayoutServerLoad = async ({ url }) => {
     notesBySpace[note.spaceId].push(note);
   }
 
-  const todosBySpace: Record<string, typeof topLevelTodos> = {};
-  for (const todo of topLevelTodos) {
-    if (!todosBySpace[todo.spaceId]) todosBySpace[todo.spaceId] = [];
-    todosBySpace[todo.spaceId].push(todo);
-  }
-
-  return { spaces: buildTree(flat), notesBySpace, todosBySpace };
+  return { spaces: buildTree(flat), notesBySpace };
 };

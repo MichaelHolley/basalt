@@ -1,4 +1,4 @@
-import { eq, asc, or, inArray, isNull, sql } from "drizzle-orm";
+import { eq, asc, desc, or, inArray, isNull, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { db } from "$lib/server/db";
 import { todos } from "$lib/server/db/schema";
@@ -110,6 +110,16 @@ export function setTodoDueDate(id: string, dueDate: Date | null): void {
   const todo = getTodo(id);
   if (!todo) throw new Error("Todo not found");
   db.update(todos).set({ dueDate, updatedAt: new Date() }).where(eq(todos.id, id)).run();
+}
+
+export function getOpenTodos(limit: number) {
+  return db
+    .select()
+    .from(todos)
+    .where(eq(todos.status, "open"))
+    .orderBy(sql`${todos.dueDate} ASC NULLS LAST`, asc(todos.createdAt))
+    .limit(limit)
+    .all();
 }
 
 export function deleteTodo(id: string): { spaceId: string; parentId: string | null } {

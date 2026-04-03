@@ -65,7 +65,7 @@
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 
 <Sidebar.Provider>
-	<AppSidebar spaces={data.spaces ?? []} notesBySpace={data.notesBySpace ?? {}} todosBySpace={data.todosBySpace ?? {}} />
+	<AppSidebar spaces={data.spaces ?? []} notesBySpace={data.notesBySpace ?? {}} />
 	<Sidebar.Inset>
 		<header class="flex h-12 shrink-0 items-center gap-2 border-b px-4">
 			<Sidebar.Trigger class="-ml-1" />
