@@ -3,9 +3,10 @@ import { z } from 'zod';
 import fs from 'fs';
 import path from 'path';
 import { nanoid } from 'nanoid';
-import { sql, eq, asc, or, and } from 'drizzle-orm';
+import { sql, eq, asc, or, and, inArray } from 'drizzle-orm';
 import { getConfig } from '$lib/server/config';
 import { slugify, buildTodoTree, normalizeRelation } from '$lib/server/db/utils';
+import type { TodoWithDepth } from '$lib/server/db/utils';
 import { spaces, notes, todos, relations } from '$lib/server/db/schema';
 import type { PageServerLoad, Actions } from './$types';
 
@@ -64,7 +65,17 @@ export const load: PageServerLoad = async ({ params }) => {
 	const todoId = segments[segments.length - 1];
 	const todo = db.select().from(todos).where(eq(todos.id, todoId)).get();
 	if (todo) {
-		const children = db.select().from(todos).where(eq(todos.parentId, todoId)).orderBy(asc(todos.createdAt)).all();
+		const directChildren = db.select().from(todos).where(eq(todos.parentId, todoId)).orderBy(asc(todos.createdAt)).all();
+		const grandchildren = directChildren.length > 0
+			? db.select().from(todos).where(inArray(todos.parentId, directChildren.map(c => c.id))).orderBy(asc(todos.createdAt)).all()
+			: [];
+		const children: TodoWithDepth[] = [];
+		for (const child of directChildren) {
+			children.push({ ...child, depth: 1 });
+			for (const gc of grandchildren.filter(gc => gc.parentId === child.id)) {
+				children.push({ ...gc, depth: 2 });
+			}
+		}
 
 		const todoRelations = db.select().from(relations).where(
 			or(

@@ -20,6 +20,7 @@ type Space = typeof spaces.$inferSelect;
 export type Note = typeof notes.$inferSelect;
 export type Todo = typeof todos.$inferSelect;
 export type TodoNode = Todo & { children: TodoNode[] };
+export type TodoWithDepth = Todo & { depth: number };
 
 export function buildTodoTree(flat: Todo[]): TodoNode[] {
 	const map = new Map<string, TodoNode>();
