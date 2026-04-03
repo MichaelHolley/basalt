@@ -53,8 +53,18 @@ Migration-Files and related files must be generated. Any modification is prohibi
 
 Svelte 5 runes (`$state`, `$derived`, `$effect`) are used throughout. Rune mode is enabled globally via `svelte.config.js`.
 
+In a page or component there must be a strict hierarchy from top to bottom:
+1. defining interfaces and types
+2. props
+3. `$state` runes
+4. `$derived` runes
+5. `$effect` runes
+6. functions
+
+
 ### UI Components
 
 - shadcn-svelte components live in `src/lib/components/ui/`
 - `cn()` utility (clsx + tailwind-merge) is in `src/lib/utils.ts`
 - Path alias `@/*` maps to `src/lib/*`
+- App related components live in `src/lib/components/` and a dedicated directory if a group is applicable. Use PascalCase.

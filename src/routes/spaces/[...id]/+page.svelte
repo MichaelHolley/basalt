@@ -4,7 +4,7 @@
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
-	import { FileText, Calendar, Pencil, Trash2, Plus, Check, X, Link, CheckSquare } from '@lucide/svelte';
+	import { FileText, Calendar, Pencil, Trash2, Plus, Check, X, Link, CheckSquare, Copy } from '@lucide/svelte';
 	import TodoTree from '$lib/components/todos/TodoTree.svelte';
 	import type { PageData } from './$types';
 
@@ -13,11 +13,37 @@
 	let editing = $state(false);
 	let editTitle = $state('');
 	let titleInput = $state<HTMLInputElement | null>(null);
-
-	// Note autosave
+	let currentContent = $state('');
 	let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+	let toggleForm = $state<HTMLFormElement | null>(null);
+	let isDone = $state(false);
+	let childToggleForms = $state<Record<string, HTMLFormElement | null>>({});
+	let childDoneState = $state<Record<string, boolean>>({});
+	let copied = $state(false);
+	let addingRelation = $state(false);
+	let relationTargetType = $state<'note' | 'todo'>('note');
+	let relationTargetId = $state('');
+	let addingChild = $state(false);
+	let newChildTitle = $state('');
+	let childInput = $state<HTMLInputElement | null>(null);
+	let addingTodo = $state(false);
+	let newTodoTitle = $state('');
+	let newTodoInput = $state<HTMLInputElement | null>(null);
+
+	$effect(() => { if (data.type === 'note') currentContent = data.content; });
+	$effect(() => { if (data.type === 'todo') isDone = data.todo.status === 'done'; });
+	$effect(() => {
+		if (data.type === 'todo') {
+			for (const child of data.children) childDoneState[child.id] = child.status === 'done';
+		}
+	});
+	$effect(() => { if (editing) titleInput?.focus(); });
+	$effect(() => { if (addingChild) childInput?.focus(); });
+	$effect(() => { if (addingTodo) newTodoInput?.focus(); });
+
 	function handleContentChange(content: string) {
 		if (data.type !== 'note') return;
+		currentContent = content;
 		if (saveTimeout) clearTimeout(saveTimeout);
 		saveTimeout = setTimeout(() => {
 			fetch('/api/notes/autosave', {
@@ -28,34 +54,13 @@
 		}, 1000);
 	}
 
-	// Todo toggle state
-	let toggleForm = $state<HTMLFormElement | null>(null);
-	let isDone = $state(false);
-	$effect(() => { if (data.type === 'todo') isDone = data.todo.status === 'done'; });
-
-	let childToggleForms = $state<Record<string, HTMLFormElement | null>>({});
-	let childDoneState = $state<Record<string, boolean>>({});
-	$effect(() => {
-		if (data.type === 'todo') {
-			for (const child of data.children) childDoneState[child.id] = child.status === 'done';
-		}
-	});
-
-	// Relations
-	let addingRelation = $state(false);
-	let relationTargetType = $state<'note' | 'todo'>('note');
-	let relationTargetId = $state('');
-
-	// Todo child creation
-	let addingChild = $state(false);
-	let newChildTitle = $state('');
-	let childInput = $state<HTMLInputElement | null>(null);
-
-	// New top-level todo on space view
-	let addingTodo = $state(false);
-	let newTodoTitle = $state('');
-	let newTodoInput = $state<HTMLInputElement | null>(null);
-	$effect(() => { if (addingTodo) newTodoInput?.focus(); });
+	function copyMarkdown() {
+		if (data.type !== 'note') return;
+		navigator.clipboard.writeText(currentContent).then(() => {
+			copied = true;
+			setTimeout(() => (copied = false), 1500);
+		});
+	}
 
 	function startEdit() {
 		editing = true;
@@ -64,9 +69,6 @@
 	}
 
 	function cancelEdit() { editing = false; }
-
-	$effect(() => { if (editing) titleInput?.focus(); });
-	$effect(() => { if (addingChild) childInput?.focus(); });
 </script>
 
 {#if data.type === 'space'}
@@ -135,6 +137,13 @@
 				</form>
 			{:else}
 				<h1 class="flex-1 truncate text-sm font-semibold">{data.note.title}</h1>
+				<Button variant="ghost" size="icon" class="size-7" onclick={copyMarkdown} title="Copy as markdown">
+					{#if copied}
+						<Check class="size-3.5 text-primary" />
+					{:else}
+						<Copy class="size-3.5" />
+					{/if}
+				</Button>
 				<Button variant="ghost" size="icon" class="size-7" onclick={startEdit} title="Rename note">
 					<Pencil class="size-3.5" />
 				</Button>
