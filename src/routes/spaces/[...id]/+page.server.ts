@@ -2,175 +2,58 @@ import { fail, error, redirect } from "@sveltejs/kit";
 import { z } from "zod";
 import fs from "fs";
 import path from "path";
-import { nanoid } from "nanoid";
-import { sql, eq, asc, or, and, inArray } from "drizzle-orm";
 import { getConfig } from "$lib/server/config";
-import {
-  slugify,
-  buildTodoTree,
-  normalizeRelation,
-} from "$lib/server/db/utils";
+import { buildTodoTree } from "$lib/server/db/utils";
 import type { TodoWithDepth } from "$lib/server/db/utils";
-import { db } from "$lib/server/db";
-import { spaces, notes, todos, relations } from "$lib/server/db/schema";
+import { getSpace } from "$lib/server/service/space.service";
+import { getNote, getNotesBySpace, getNotesByRootSpace, renameNote, deleteNote } from "$lib/server/service/note.service";
+import { getTodo, getTodosBySpace, getTodosByRootSpace, getTodoChildren, getTodoGrandchildren, renameTodo, toggleTodo, setTodoDueDate, createTodo, deleteTodo } from "$lib/server/service/todo.service";
+import { getRelationsForItem, resolveRelatedItems, createRelation, deleteRelation } from "$lib/server/service/relation.service";
 import type { PageServerLoad, Actions } from "./$types";
 
 export const load: PageServerLoad = async ({ params }) => {
   const config = getConfig();
 
   // Check if this path is a space
-  const space = db.select().from(spaces).where(eq(spaces.id, params.id)).get();
+  const space = getSpace(params.id);
   if (space) {
-    const spaceNotes = db
-      .select()
-      .from(notes)
-      .where(eq(notes.spaceId, space.id))
-      .orderBy(asc(notes.title))
-      .all();
-    const spaceTodosFlat = db
-      .select()
-      .from(todos)
-      .where(eq(todos.spaceId, space.id))
-      .orderBy(asc(todos.createdAt))
-      .all();
     return {
       type: "space" as const,
       space,
-      notes: spaceNotes,
-      todos: buildTodoTree(spaceTodosFlat),
+      notes: getNotesBySpace(space.id),
+      todos: buildTodoTree(getTodosBySpace(space.id)),
     };
   }
 
   // Check if this path is a note (append .md)
   const noteId = `${params.id}.md`;
-  const note = db.select().from(notes).where(eq(notes.id, noteId)).get();
+  const note = getNote(noteId);
   if (note) {
     const filePath = path.join(config.vaultPath, ...note.id.split("/"));
-    const content = fs.existsSync(filePath)
-      ? fs.readFileSync(filePath, "utf-8")
-      : "";
-
-    const noteRelations = db
-      .select()
-      .from(relations)
-      .where(
-        or(
-          and(
-            eq(relations.sourceType, "note"),
-            eq(relations.sourceId, note.id),
-          ),
-          and(
-            eq(relations.targetType, "note"),
-            eq(relations.targetId, note.id),
-          ),
-        ),
-      )
-      .all();
-
-    const relatedItems = noteRelations
-      .map((r) => {
-        const isSource = r.sourceType === "note" && r.sourceId === note.id;
-        const otherType = isSource ? r.targetType : r.sourceType;
-        const otherId = isSource ? r.targetId : r.sourceId;
-        if (otherType === "note") {
-          const related = db
-            .select()
-            .from(notes)
-            .where(eq(notes.id, otherId))
-            .get();
-          return related
-            ? {
-                relationId: r.id,
-                type: "note" as const,
-                id: related.id,
-                title: related.title,
-                href: `/spaces/${related.id.replace(/\.md$/, "")}`,
-              }
-            : null;
-        } else {
-          const related = db
-            .select()
-            .from(todos)
-            .where(eq(todos.id, otherId))
-            .get();
-          return related
-            ? {
-                relationId: r.id,
-                type: "todo" as const,
-                id: related.id,
-                title: related.title,
-                href: `/spaces/${related.spaceId}/${related.id}`,
-              }
-            : null;
-        }
-      })
-      .filter(Boolean) as {
-      relationId: string;
-      type: "note" | "todo";
-      id: string;
-      title: string;
-      href: string;
-    }[];
-
+    const content = fs.existsSync(filePath) ? fs.readFileSync(filePath, "utf-8") : "";
+    const noteRelations = getRelationsForItem("note", note.id);
+    const relatedItems = resolveRelatedItems(noteRelations, "note", note.id);
     const rootSpace = note.spaceId.split("/")[0];
-    const allNotes = db
-      .select()
-      .from(notes)
-      .where(
-        or(
-          eq(notes.spaceId, rootSpace),
-          sql`${notes.spaceId} LIKE ${rootSpace + "/%"}`,
-        ),
-      )
-      .orderBy(asc(notes.title))
-      .all();
-    const allTodos = db
-      .select()
-      .from(todos)
-      .where(
-        or(
-          eq(todos.spaceId, rootSpace),
-          sql`${todos.spaceId} LIKE ${rootSpace + "/%"}`,
-        ),
-      )
-      .orderBy(asc(todos.createdAt))
-      .all();
 
     return {
       type: "note" as const,
       note,
       content,
       relatedItems,
-      allNotes,
-      allTodos,
+      allNotes: getNotesByRootSpace(rootSpace),
+      allTodos: getTodosByRootSpace(rootSpace),
     };
   }
 
   // Check if the last segment is a todo nanoid
   const segments = params.id.split("/");
   const todoId = segments[segments.length - 1];
-  const todo = db.select().from(todos).where(eq(todos.id, todoId)).get();
+  const todo = getTodo(todoId);
   if (todo) {
-    const directChildren = db
-      .select()
-      .from(todos)
-      .where(eq(todos.parentId, todoId))
-      .orderBy(asc(todos.createdAt))
-      .all();
+    const directChildren = getTodoChildren(todoId);
     const grandchildren =
-      directChildren.length > 0
-        ? db
-            .select()
-            .from(todos)
-            .where(
-              inArray(
-                todos.parentId,
-                directChildren.map((c) => c.id),
-              ),
-            )
-            .orderBy(asc(todos.createdAt))
-            .all()
-        : [];
+      directChildren.length > 0 ? getTodoGrandchildren(directChildren.map((c) => c.id)) : [];
+
     const children: TodoWithDepth[] = [];
     for (const child of directChildren) {
       children.push({ ...child, depth: 1 });
@@ -179,99 +62,17 @@ export const load: PageServerLoad = async ({ params }) => {
       }
     }
 
-    const todoRelations = db
-      .select()
-      .from(relations)
-      .where(
-        or(
-          and(
-            eq(relations.sourceType, "todo"),
-            eq(relations.sourceId, todo.id),
-          ),
-          and(
-            eq(relations.targetType, "todo"),
-            eq(relations.targetId, todo.id),
-          ),
-        ),
-      )
-      .all();
-
-    const relatedItems = todoRelations
-      .map((r) => {
-        const isSource = r.sourceType === "todo" && r.sourceId === todo.id;
-        const otherType = isSource ? r.targetType : r.sourceType;
-        const otherId = isSource ? r.targetId : r.sourceId;
-        if (otherType === "note") {
-          const related = db
-            .select()
-            .from(notes)
-            .where(eq(notes.id, otherId))
-            .get();
-          return related
-            ? {
-                relationId: r.id,
-                type: "note" as const,
-                id: related.id,
-                title: related.title,
-                href: `/spaces/${related.id.replace(/\.md$/, "")}`,
-              }
-            : null;
-        } else {
-          const related = db
-            .select()
-            .from(todos)
-            .where(eq(todos.id, otherId))
-            .get();
-          return related
-            ? {
-                relationId: r.id,
-                type: "todo" as const,
-                id: related.id,
-                title: related.title,
-                href: `/spaces/${related.spaceId}/${related.id}`,
-              }
-            : null;
-        }
-      })
-      .filter(Boolean) as {
-      relationId: string;
-      type: "note" | "todo";
-      id: string;
-      title: string;
-      href: string;
-    }[];
-
+    const todoRelations = getRelationsForItem("todo", todo.id);
+    const relatedItems = resolveRelatedItems(todoRelations, "todo", todo.id);
     const rootSpace = todo.spaceId.split("/")[0];
-    const allNotes = db
-      .select()
-      .from(notes)
-      .where(
-        or(
-          eq(notes.spaceId, rootSpace),
-          sql`${notes.spaceId} LIKE ${rootSpace + "/%"}`,
-        ),
-      )
-      .orderBy(asc(notes.title))
-      .all();
-    const allTodos = db
-      .select()
-      .from(todos)
-      .where(
-        or(
-          eq(todos.spaceId, rootSpace),
-          sql`${todos.spaceId} LIKE ${rootSpace + "/%"}`,
-        ),
-      )
-      .orderBy(asc(todos.createdAt))
-      .all();
 
     return {
       type: "todo" as const,
       todo,
       children,
       relatedItems,
-      allNotes,
-      allTodos,
+      allNotes: getNotesByRootSpace(rootSpace),
+      allTodos: getTodosByRootSpace(rootSpace),
     };
   }
 
@@ -337,51 +138,14 @@ export const actions: Actions = {
       return fail(400, { error: result.error.issues[0].message });
 
     const config = getConfig();
-
-    const note = db
-      .select()
-      .from(notes)
-      .where(eq(notes.id, result.data.id))
-      .get();
+    const note = getNote(result.data.id);
     if (!note) return fail(404, { error: "Note not found" });
 
-    const slug = slugify(result.data.title);
-    const parts = result.data.id.split("/");
-    parts[parts.length - 1] = `${slug}.md`;
-    const newId = parts.join("/");
-
-    if (newId !== result.data.id) {
-      const existing = db.select().from(notes).where(eq(notes.id, newId)).get();
-      if (existing)
-        return fail(400, {
-          error: `A note named "${result.data.title}" already exists in this space`,
-        });
-
-      const oldPath = path.join(config.vaultPath, ...result.data.id.split("/"));
-      const newPath = path.join(config.vaultPath, ...newId.split("/"));
-      if (fs.existsSync(oldPath)) fs.renameSync(oldPath, newPath);
-
-      db.run(sql`PRAGMA foreign_keys = OFF`);
-      try {
-        db.transaction((tx) => {
-          tx.run(
-            sql`UPDATE notes SET id = ${newId}, title = ${result.data.title}, updated_at = ${Date.now()} WHERE id = ${result.data.id}`,
-          );
-        });
-      } finally {
-        db.run(sql`PRAGMA foreign_keys = ON`);
-      }
-      db.run(
-        sql`UPDATE notes_fts SET note_id = ${newId}, title = ${result.data.title} WHERE note_id = ${result.data.id}`,
-      );
-    } else {
-      db.update(notes)
-        .set({ title: result.data.title, updatedAt: new Date() })
-        .where(eq(notes.id, result.data.id))
-        .run();
-      db.run(
-        sql`UPDATE notes_fts SET title = ${result.data.title} WHERE note_id = ${result.data.id}`,
-      );
+    let newId: string;
+    try {
+      newId = renameNote(result.data.id, result.data.title, config.vaultPath);
+    } catch (e) {
+      return fail(400, { error: (e as Error).message });
     }
 
     redirect(302, `/spaces/${newId.replace(/\.md$/, "")}`);
@@ -394,23 +158,11 @@ export const actions: Actions = {
       return fail(400, { error: result.error.issues[0].message });
 
     const config = getConfig();
-
-    const note = db
-      .select()
-      .from(notes)
-      .where(eq(notes.id, result.data.id))
-      .get();
+    const note = getNote(result.data.id);
     if (!note) return fail(404, { error: "Note not found" });
 
-    const filePath = path.join(config.vaultPath, ...result.data.id.split("/"));
-    if (fs.existsSync(filePath)) fs.rmSync(filePath);
-    db.run(
-      sql`DELETE FROM relations WHERE (source_type = 'note' AND source_id = ${result.data.id}) OR (target_type = 'note' AND target_id = ${result.data.id})`,
-    );
-    db.delete(notes).where(eq(notes.id, result.data.id)).run();
-    db.run(sql`DELETE FROM notes_fts WHERE note_id = ${result.data.id}`);
-
-    redirect(302, `/spaces/${note.spaceId}`);
+    const spaceId = deleteNote(result.data.id, config.vaultPath);
+    redirect(302, `/spaces/${spaceId}`);
   },
 
   // Todo actions
@@ -423,17 +175,10 @@ export const actions: Actions = {
     if (!result.success)
       return fail(400, { error: result.error.issues[0].message });
 
-    const todo = db
-      .select()
-      .from(todos)
-      .where(eq(todos.id, result.data.id))
-      .get();
+    const todo = getTodo(result.data.id);
     if (!todo) return fail(404, { error: "Todo not found" });
 
-    db.update(todos)
-      .set({ title: result.data.title, updatedAt: new Date() })
-      .where(eq(todos.id, result.data.id))
-      .run();
+    renameTodo(result.data.id, result.data.title);
     return { success: true };
   },
 
@@ -443,20 +188,10 @@ export const actions: Actions = {
     if (!result.success)
       return fail(400, { error: result.error.issues[0].message });
 
-    const todo = db
-      .select()
-      .from(todos)
-      .where(eq(todos.id, result.data.id))
-      .get();
+    const todo = getTodo(result.data.id);
     if (!todo) return fail(404, { error: "Todo not found" });
 
-    db.update(todos)
-      .set({
-        status: todo.status === "open" ? "done" : "open",
-        updatedAt: new Date(),
-      })
-      .where(eq(todos.id, result.data.id))
-      .run();
+    toggleTodo(result.data.id);
     return { success: true };
   },
 
@@ -469,18 +204,11 @@ export const actions: Actions = {
     if (!result.success)
       return fail(400, { error: result.error.issues[0].message });
 
-    const todo = db
-      .select()
-      .from(todos)
-      .where(eq(todos.id, result.data.id))
-      .get();
+    const todo = getTodo(result.data.id);
     if (!todo) return fail(404, { error: "Todo not found" });
 
     const dueDate = result.data.dueDate ? new Date(result.data.dueDate) : null;
-    db.update(todos)
-      .set({ dueDate, updatedAt: new Date() })
-      .where(eq(todos.id, result.data.id))
-      .run();
+    setTodoDueDate(result.data.id, dueDate);
     return { success: true };
   },
 
@@ -493,41 +221,14 @@ export const actions: Actions = {
     if (!result.success)
       return fail(400, { error: result.error.issues[0].message });
 
-    const parent = db
-      .select()
-      .from(todos)
-      .where(eq(todos.id, result.data.parentId))
-      .get();
+    const parent = getTodo(result.data.parentId);
     if (!parent) return fail(404, { error: "Parent todo not found" });
 
-    let depth = 0;
-    let current = parent;
-    while (current.parentId) {
-      depth++;
-      current = db
-        .select()
-        .from(todos)
-        .where(eq(todos.id, current.parentId))
-        .get()!;
+    try {
+      createTodo(result.data.title, parent.spaceId, result.data.parentId);
+    } catch (e) {
+      return fail(400, { error: (e as Error).message });
     }
-    if (depth >= 2)
-      return fail(400, {
-        error: "Todos can only be nested up to 3 levels deep",
-      });
-
-    const id = nanoid();
-    const now = new Date();
-    db.insert(todos)
-      .values({
-        id,
-        spaceId: parent.spaceId,
-        parentId: result.data.parentId,
-        title: result.data.title,
-        status: "open",
-        createdAt: now,
-        updatedAt: now,
-      })
-      .run();
     return { success: true };
   },
 
@@ -544,40 +245,11 @@ export const actions: Actions = {
 
     const { currentType, currentId, targetType, targetId } = result.data;
 
-    if (currentType === targetType && currentId === targetId) {
-      return fail(400, { error: "Cannot create a relation to itself" });
+    try {
+      createRelation(currentType, currentId, targetType, targetId);
+    } catch (e) {
+      return fail(400, { error: (e as Error).message });
     }
-
-    const [source, target] = normalizeRelation(
-      { type: currentType, id: currentId },
-      { type: targetType, id: targetId },
-    );
-
-    const existing = db
-      .select()
-      .from(relations)
-      .where(
-        and(
-          eq(relations.sourceType, source.type),
-          eq(relations.sourceId, source.id),
-          eq(relations.targetType, target.type),
-          eq(relations.targetId, target.id),
-        ),
-      )
-      .get();
-    if (existing) return fail(400, { error: "Relation already exists" });
-
-    db.insert(relations)
-      .values({
-        id: nanoid(),
-        sourceType: source.type,
-        sourceId: source.id,
-        targetType: target.type,
-        targetId: target.id,
-        createdAt: new Date(),
-      })
-      .run();
-
     return { success: true };
   },
 
@@ -587,7 +259,7 @@ export const actions: Actions = {
     if (!result.success)
       return fail(400, { error: result.error.issues[0].message });
 
-    db.delete(relations).where(eq(relations.id, result.data.id)).run();
+    deleteRelation(result.data.id);
     return { success: true };
   },
 
@@ -597,43 +269,13 @@ export const actions: Actions = {
     if (!result.success)
       return fail(400, { error: result.error.issues[0].message });
 
-    const todo = db
-      .select()
-      .from(todos)
-      .where(eq(todos.id, result.data.id))
-      .get();
+    const todo = getTodo(result.data.id);
     if (!todo) return fail(404, { error: "Todo not found" });
 
-    db.transaction((tx) => {
-      // Clean up relations for this todo and all descendants before deleting them
-      tx.run(sql`
-				DELETE FROM relations WHERE
-					(source_type = 'todo' AND source_id IN (
-						SELECT id FROM todos WHERE id = ${result.data.id}
-						UNION SELECT id FROM todos WHERE parent_id = ${result.data.id}
-						UNION SELECT id FROM todos WHERE parent_id IN (SELECT id FROM todos WHERE parent_id = ${result.data.id})
-						UNION SELECT id FROM todos WHERE parent_id IN (SELECT id FROM todos WHERE parent_id IN (SELECT id FROM todos WHERE parent_id = ${result.data.id}))
-					)) OR
-					(target_type = 'todo' AND target_id IN (
-						SELECT id FROM todos WHERE id = ${result.data.id}
-						UNION SELECT id FROM todos WHERE parent_id = ${result.data.id}
-						UNION SELECT id FROM todos WHERE parent_id IN (SELECT id FROM todos WHERE parent_id = ${result.data.id})
-						UNION SELECT id FROM todos WHERE parent_id IN (SELECT id FROM todos WHERE parent_id IN (SELECT id FROM todos WHERE parent_id = ${result.data.id}))
-					))
-			`);
-      tx.run(
-        sql`DELETE FROM todos WHERE parent_id IN (SELECT id FROM todos WHERE parent_id IN (SELECT id FROM todos WHERE parent_id = ${result.data.id}))`,
-      );
-      tx.run(
-        sql`DELETE FROM todos WHERE parent_id IN (SELECT id FROM todos WHERE parent_id = ${result.data.id})`,
-      );
-      tx.run(sql`DELETE FROM todos WHERE parent_id = ${result.data.id}`);
-      tx.run(sql`DELETE FROM todos WHERE id = ${result.data.id}`);
-    });
-
-    const returnTo = todo.parentId
-      ? `/spaces/${todo.spaceId}/${todo.parentId}`
-      : `/spaces/${todo.spaceId}`;
+    const { spaceId, parentId } = deleteTodo(result.data.id);
+    const returnTo = parentId
+      ? `/spaces/${spaceId}/${parentId}`
+      : `/spaces/${spaceId}`;
     redirect(302, returnTo);
   },
 };

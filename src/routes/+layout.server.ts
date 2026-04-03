@@ -1,9 +1,9 @@
 import { redirect } from "@sveltejs/kit";
 import { configExists } from "$lib/server/config";
 import { buildTree } from "$lib/server/db/utils";
-import { spaces, notes, todos } from "$lib/server/db/schema";
-import { asc, isNull } from "drizzle-orm";
-import { db } from "$lib/server/db";
+import { getAllSpaces } from "$lib/server/service/space.service";
+import { getAllNotes } from "$lib/server/service/note.service";
+import { getTopLevelTodos } from "$lib/server/service/todo.service";
 import type { LayoutServerLoad } from "./$types";
 
 export const load: LayoutServerLoad = async ({ url }) => {
@@ -16,14 +16,9 @@ export const load: LayoutServerLoad = async ({ url }) => {
 
   if (isSetup) redirect(302, "/");
 
-  const flat = db.select().from(spaces).orderBy(asc(spaces.id)).all();
-  const allNotes = db.select().from(notes).orderBy(asc(notes.title)).all();
-  const topLevelTodos = db
-    .select()
-    .from(todos)
-    .where(isNull(todos.parentId))
-    .orderBy(asc(todos.createdAt))
-    .all();
+  const flat = getAllSpaces();
+  const allNotes = getAllNotes();
+  const topLevelTodos = getTopLevelTodos();
 
   const notesBySpace: Record<string, typeof allNotes> = {};
   for (const note of allNotes) {

@@ -1,12 +1,7 @@
-import { fail, redirect } from "@sveltejs/kit";
+import { fail } from "@sveltejs/kit";
 import { z } from "zod";
-import fs from "fs";
-import path from "path";
 import { getConfig } from "$lib/server/config";
-import { slugify, renameSpace } from "$lib/server/db/utils";
-import { spaces, notes } from "$lib/server/db/schema";
-import { eq, sql } from "drizzle-orm";
-import { db } from "$lib/server/db";
+import { getSpace, createSpace, renameSpace, deleteSpace } from "$lib/server/service/space.service";
 import type { Actions } from "./$types";
 
 const createSchema = z.object({
@@ -35,26 +30,12 @@ export const actions: Actions = {
       return fail(400, { error: result.error.issues[0].message });
 
     const config = getConfig();
-    const slug = slugify(result.data.name);
-    const id = result.data.parentId ? `${result.data.parentId}/${slug}` : slug;
 
-    const existing = db.select().from(spaces).where(eq(spaces.id, id)).get();
-    if (existing)
-      return fail(400, {
-        error: `A space named "${result.data.name}" already exists here`,
-      });
-
-    const folderPath = path.join(config.vaultPath, ...id.split("/"));
-    fs.mkdirSync(folderPath, { recursive: true });
-
-    db.insert(spaces)
-      .values({
-        id,
-        parentId: result.data.parentId ?? null,
-        name: result.data.name,
-        createdAt: new Date(),
-      })
-      .run();
+    try {
+      createSpace(result.data.name, result.data.parentId, config.vaultPath);
+    } catch (e) {
+      return fail(400, { error: (e as Error).message });
+    }
 
     return { success: true };
   },
@@ -71,14 +52,10 @@ export const actions: Actions = {
 
     const config = getConfig();
 
-    const existing = db
-      .select()
-      .from(spaces)
-      .where(eq(spaces.id, result.data.id))
-      .get();
+    const existing = getSpace(result.data.id);
     if (!existing) return fail(404, { error: "Space not found" });
 
-    renameSpace(db, result.data.id, result.data.name, config.vaultPath);
+    renameSpace(result.data.id, result.data.name, config.vaultPath);
     return { success: true };
   },
 
@@ -90,22 +67,7 @@ export const actions: Actions = {
       return fail(400, { error: result.error.issues[0].message });
 
     const config = getConfig();
-
-    const folderPath = path.join(
-      config.vaultPath,
-      ...result.data.id.split("/"),
-    );
-    if (fs.existsSync(folderPath)) {
-      fs.rmSync(folderPath, { recursive: true, force: true });
-    }
-
-    // Clean FTS entries for all notes in this space and its subspaces before cascade delete
-    db.run(sql`
-			DELETE FROM notes_fts WHERE note_id IN (
-				SELECT id FROM notes WHERE space_id = ${result.data.id} OR space_id LIKE ${result.data.id + "/%"}
-			)
-		`);
-    db.delete(spaces).where(eq(spaces.id, result.data.id)).run();
+    deleteSpace(result.data.id, config.vaultPath);
     return { success: true };
   },
 };

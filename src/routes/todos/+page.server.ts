@@ -1,9 +1,7 @@
 import { fail, redirect } from "@sveltejs/kit";
 import { z } from "zod";
-import { nanoid } from "nanoid";
-import { eq } from "drizzle-orm";
-import { db } from "$lib/server/db";
-import { spaces, todos } from "$lib/server/db/schema";
+import { getSpace } from "$lib/server/service/space.service";
+import { createTodo } from "$lib/server/service/todo.service";
 import type { Actions } from "./$types";
 
 const createSchema = z.object({
@@ -11,20 +9,6 @@ const createSchema = z.object({
   spaceId: z.string().min(1, "Space is required"),
   parentId: z.string().optional(),
 });
-
-function getTodoDepth(todoId: string): number {
-  let depth = 0;
-  let current = db.select().from(todos).where(eq(todos.id, todoId)).get();
-  while (current?.parentId) {
-    depth++;
-    current = db
-      .select()
-      .from(todos)
-      .where(eq(todos.id, current.parentId))
-      .get();
-  }
-  return depth;
-}
 
 export const actions: Actions = {
   create: async ({ request }) => {
@@ -38,42 +22,15 @@ export const actions: Actions = {
     if (!result.success)
       return fail(400, { error: result.error.issues[0].message });
 
-    const space = db
-      .select()
-      .from(spaces)
-      .where(eq(spaces.id, result.data.spaceId))
-      .get();
+    const space = getSpace(result.data.spaceId);
     if (!space) return fail(404, { error: "Space not found" });
 
-    if (result.data.parentId) {
-      const parent = db
-        .select()
-        .from(todos)
-        .where(eq(todos.id, result.data.parentId))
-        .get();
-      if (!parent) return fail(404, { error: "Parent todo not found" });
-
-      const parentDepth = getTodoDepth(result.data.parentId);
-      if (parentDepth >= 2) {
-        return fail(400, {
-          error: "Todos can only be nested up to 3 levels deep",
-        });
-      }
+    let id: string;
+    try {
+      id = createTodo(result.data.title, result.data.spaceId, result.data.parentId);
+    } catch (e) {
+      return fail(400, { error: (e as Error).message });
     }
-
-    const id = nanoid();
-    const now = new Date();
-    db.insert(todos)
-      .values({
-        id,
-        spaceId: result.data.spaceId,
-        parentId: result.data.parentId ?? null,
-        title: result.data.title,
-        status: "open",
-        createdAt: now,
-        updatedAt: now,
-      })
-      .run();
 
     redirect(302, `/spaces/${result.data.spaceId}/${id}`);
   },
