@@ -42,6 +42,8 @@ On first run, the app redirects to `/setup` to configure the vault path.
 - `db/utils.ts` — Shared DB utilities
 - `config.ts` — Reads/writes `~/.config/basalt/config.json`
 
+Migration-Files and related files must be generated. Any modification is prohibitted or must be before migrating.
+
 ### Data Flow
 
 - `+layout.server.ts` pre-loads global data available across all routes
