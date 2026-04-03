@@ -4,7 +4,7 @@ export const spaces = sqliteTable('spaces', {
 	id: text('id').primaryKey(), // relative path from vault root e.g. "work/clients"
 	parentId: text('parent_id'), // self-referential, null for top-level spaces
 	name: text('name').notNull(),
-	createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+	createdAt: integer('created_at', { mode: 'timestamp' }).notNull()
 });
 
 export const notes = sqliteTable('notes', {
@@ -14,7 +14,7 @@ export const notes = sqliteTable('notes', {
 		.references(() => spaces.id, { onDelete: 'cascade' }),
 	title: text('title').notNull(),
 	createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-	updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+	updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull()
 });
 
 export const todos = sqliteTable('todos', {
@@ -24,10 +24,12 @@ export const todos = sqliteTable('todos', {
 		.references(() => spaces.id, { onDelete: 'cascade' }),
 	parentId: text('parent_id'), // self-referential, max depth 3 enforced in app logic
 	title: text('title').notNull(),
-	status: text('status', { enum: ['open', 'done'] }).notNull().default('open'),
+	status: text('status', { enum: ['open', 'done'] })
+		.notNull()
+		.default('open'),
 	dueDate: integer('due_date', { mode: 'timestamp' }),
 	createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-	updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+	updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull()
 });
 
 // Bidirectional relations between notes and todos.
@@ -40,9 +42,9 @@ export const relations = sqliteTable(
 		sourceId: text('source_id').notNull(),
 		targetType: text('target_type', { enum: ['note', 'todo'] }).notNull(),
 		targetId: text('target_id').notNull(),
-		createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+		createdAt: integer('created_at', { mode: 'timestamp' }).notNull()
 	},
 	(t) => [
-		uniqueIndex('relations_pair_unique').on(t.sourceType, t.sourceId, t.targetType, t.targetId),
+		uniqueIndex('relations_pair_unique').on(t.sourceType, t.sourceId, t.targetType, t.targetId)
 	]
 );

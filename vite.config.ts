@@ -6,6 +6,6 @@ export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
 	ssr: {
 		// bun:sqlite is a Bun-native protocol — tell Vite not to bundle it
-		external: ['bun:sqlite'],
-	},
+		external: ['bun:sqlite']
+	}
 });

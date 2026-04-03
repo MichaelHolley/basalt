@@ -8,6 +8,6 @@ export const load: PageServerLoad = () => {
 	return {
 		vaultPath: config.vaultPath,
 		dbPath: path.join(os.homedir(), '.config', 'basalt', 'basalt.db'),
-		configPath: path.join(os.homedir(), '.config', 'basalt', 'config.json'),
+		configPath: path.join(os.homedir(), '.config', 'basalt', 'config.json')
 	};
 };

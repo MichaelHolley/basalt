@@ -20,8 +20,12 @@
 	let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 	let copied = $state(false);
 
-	$effect(() => { currentContent = content; });
-	$effect(() => { if (editing) titleInput?.focus(); });
+	$effect(() => {
+		currentContent = content;
+	});
+	$effect(() => {
+		if (editing) titleInput?.focus();
+	});
 
 	function handleContentChange(newContent: string) {
 		currentContent = newContent;
@@ -30,7 +34,7 @@
 			fetch('/api/notes/autosave', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ id: note.id, content: newContent }),
+				body: JSON.stringify({ id: note.id, content: newContent })
 			});
 		}, 1000);
 	}
@@ -47,7 +51,9 @@
 		editTitle = note.title;
 	}
 
-	function cancelEdit() { editing = false; }
+	function cancelEdit() {
+		editing = false;
+	}
 </script>
 
 <div class="flex h-full flex-1 flex-col">
@@ -56,17 +62,31 @@
 			<form
 				method="POST"
 				action="?/rename"
-				use:enhance={() => ({ update }) => { editing = false; update({ invalidateAll: true }); }}
+				use:enhance={() =>
+					({ update }) => {
+						editing = false;
+						update({ invalidateAll: true });
+					}}
 				class="flex flex-1 items-center gap-2"
 			>
 				<input type="hidden" name="id" value={note.id} />
 				<Input name="title" bind:value={editTitle} bind:ref={titleInput} class="flex-1" />
-				<Button type="submit" variant="ghost" size="icon" class="text-primary"><Check class="size-4" /></Button>
-				<Button type="button" variant="ghost" size="icon" onclick={cancelEdit}><X class="size-4" /></Button>
+				<Button type="submit" variant="ghost" size="icon" class="text-primary"
+					><Check class="size-4" /></Button
+				>
+				<Button type="button" variant="ghost" size="icon" onclick={cancelEdit}
+					><X class="size-4" /></Button
+				>
 			</form>
 		{:else}
 			<h1 class="flex-1 truncate text-sm font-semibold">{note.title}</h1>
-			<Button variant="ghost" size="icon" class="size-7" onclick={copyMarkdown} title="Copy as markdown">
+			<Button
+				variant="ghost"
+				size="icon"
+				class="size-7"
+				onclick={copyMarkdown}
+				title="Copy as markdown"
+			>
 				{#if copied}
 					<Check class="size-3.5 text-primary" />
 				{:else}
@@ -76,7 +96,14 @@
 			<Button variant="ghost" size="icon" class="size-7" onclick={startEdit} title="Rename note">
 				<Pencil class="size-3.5" />
 			</Button>
-			<form method="POST" action="?/deleteNote" use:enhance={() => ({ update }) => update({ invalidateAll: true })} class="contents">
+			<form
+				method="POST"
+				action="?/deleteNote"
+				use:enhance={() =>
+					({ update }) =>
+						update({ invalidateAll: true })}
+				class="contents"
+			>
 				<input type="hidden" name="id" value={note.id} />
 				<Button
 					type="submit"
@@ -84,7 +111,9 @@
 					size="icon"
 					class="size-7 hover:text-destructive"
 					title="Delete note"
-					onclick={(e) => { if (!confirm(`Delete "${note.title}"?`)) e.preventDefault(); }}
+					onclick={(e) => {
+						if (!confirm(`Delete "${note.title}"?`)) e.preventDefault();
+					}}
 				>
 					<Trash2 class="size-3.5" />
 				</Button>

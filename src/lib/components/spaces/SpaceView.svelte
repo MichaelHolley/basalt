@@ -19,14 +19,22 @@
 	let newTodoTitle = $state('');
 	let newTodoInput = $state<HTMLInputElement | null>(null);
 
-	$effect(() => { if (addingTodo) newTodoInput?.focus(); });
+	$effect(() => {
+		if (addingTodo) newTodoInput?.focus();
+	});
 </script>
 
 <div class="flex flex-col gap-6">
 	<div>
 		<div class="mb-2 flex items-center justify-between">
-			<h2 class="text-muted-foreground text-xs font-medium uppercase tracking-wider">Todos</h2>
-			<Button variant="ghost" size="icon" class="size-5" onclick={() => addingTodo = true} title="New todo">
+			<h2 class="text-xs font-medium tracking-wider text-muted-foreground uppercase">Todos</h2>
+			<Button
+				variant="ghost"
+				size="icon"
+				class="size-5"
+				onclick={() => (addingTodo = true)}
+				title="New todo"
+			>
 				<Plus class="size-3" />
 			</Button>
 		</div>
@@ -34,17 +42,36 @@
 			<form
 				method="POST"
 				action="/todos?/create"
-				use:enhance={() => ({ update }) => { addingTodo = false; newTodoTitle = ''; update({ invalidateAll: true }); }}
+				use:enhance={() =>
+					({ update }) => {
+						addingTodo = false;
+						newTodoTitle = '';
+						update({ invalidateAll: true });
+					}}
 				class="mb-2 flex items-center gap-2"
 			>
 				<input type="hidden" name="spaceId" value={space.id} />
-				<Input name="title" bind:value={newTodoTitle} bind:ref={newTodoInput} placeholder="Todo title" class="flex-1" />
-				<Button type="submit" variant="ghost" size="icon" class="shrink-0 text-primary"><Check class="size-4" /></Button>
-				<Button type="button" variant="ghost" size="icon" class="shrink-0" onclick={() => addingTodo = false}><X class="size-4" /></Button>
+				<Input
+					name="title"
+					bind:value={newTodoTitle}
+					bind:ref={newTodoInput}
+					placeholder="Todo title"
+					class="flex-1"
+				/>
+				<Button type="submit" variant="ghost" size="icon" class="shrink-0 text-primary"
+					><Check class="size-4" /></Button
+				>
+				<Button
+					type="button"
+					variant="ghost"
+					size="icon"
+					class="shrink-0"
+					onclick={() => (addingTodo = false)}><X class="size-4" /></Button
+				>
 			</form>
 		{/if}
 		{#if todos.length === 0 && !addingTodo}
-			<p class="text-muted-foreground text-sm italic">No todos yet.</p>
+			<p class="text-sm text-muted-foreground italic">No todos yet.</p>
 		{:else if todos.length > 0}
 			<ul class="flex flex-col gap-0.5">
 				<TodoTree {todos} />
@@ -52,15 +79,18 @@
 		{/if}
 	</div>
 	<div>
-		<h2 class="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wider">Notes</h2>
+		<h2 class="mb-2 text-xs font-medium tracking-wider text-muted-foreground uppercase">Notes</h2>
 		{#if notes.length === 0}
-			<p class="text-muted-foreground text-sm italic">No notes yet.</p>
+			<p class="text-sm text-muted-foreground italic">No notes yet.</p>
 		{:else}
 			<ul class="flex flex-col gap-1">
 				{#each notes as note}
 					<li>
-						<a href="/spaces/{note.id.replace(/\.md$/, '')}" class="hover:bg-accent flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors">
-							<FileText class="text-muted-foreground size-4 shrink-0" />
+						<a
+							href="/spaces/{note.id.replace(/\.md$/, '')}"
+							class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent"
+						>
+							<FileText class="size-4 shrink-0 text-muted-foreground" />
 							{note.title}
 						</a>
 					</li>

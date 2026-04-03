@@ -30,7 +30,7 @@
 			return parts.map((seg, i, arr) => ({
 				label: seg.charAt(0).toUpperCase() + seg.slice(1),
 				href: '/' + arr.slice(0, i + 1).join('/'),
-				isLast: i === arr.length - 1,
+				isLast: i === arr.length - 1
 			}));
 		}
 
@@ -54,7 +54,7 @@
 				label = pd.todo?.title ?? seg;
 			} else {
 				// Intermediate segment — always a space
-				label = spaceNameMap.get(pathSoFar) ?? (seg.charAt(0).toUpperCase() + seg.slice(1));
+				label = spaceNameMap.get(pathSoFar) ?? seg.charAt(0).toUpperCase() + seg.slice(1);
 			}
 
 			return { label, href, isLast };

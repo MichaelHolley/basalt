@@ -8,7 +8,7 @@ export const load: PageServerLoad = () => {
 };
 
 const setupSchema = z.object({
-	vaultPath: z.string().min(1, 'Vault path is required'),
+	vaultPath: z.string().min(1, 'Vault path is required')
 });
 
 export const actions: Actions = {
@@ -22,5 +22,5 @@ export const actions: Actions = {
 
 		writeConfig({ vaultPath: result.data.vaultPath });
 		redirect(302, '/');
-	},
+	}
 };

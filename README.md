@@ -30,10 +30,10 @@ Open [http://localhost:5173](http://localhost:5173). On first launch you'll be p
 
 ## Data layout
 
-| Location | Contents |
-|---|---|
-| `~/Documents/Basalt/` *(or custom)* | `.md` note files mirroring the space folder structure |
-| `~/.config/basalt/basalt.db` | SQLite index: spaces, notes metadata, todos, FTS |
-| `~/.config/basalt/config.json` | Vault path |
+| Location                            | Contents                                              |
+| ----------------------------------- | ----------------------------------------------------- |
+| `~/Documents/Basalt/` _(or custom)_ | `.md` note files mirroring the space folder structure |
+| `~/.config/basalt/basalt.db`        | SQLite index: spaces, notes metadata, todos, FTS      |
+| `~/.config/basalt/config.json`      | Vault path                                            |
 
 > The SQLite database is a cache — deleting it and restarting the app rebuilds the index from disk.
