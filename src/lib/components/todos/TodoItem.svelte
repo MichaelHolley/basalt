@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { Checkbox } from '$lib/components/ui/checkbox';
-	import { Calendar } from '@lucide/svelte';
-	import { cn } from '$lib/utils';
 	import type { Todo } from '$lib/server/db/utils';
+	import { cn } from '$lib/utils';
+	import { Calendar } from '@lucide/svelte';
+	import { SvelteDate } from 'svelte/reactivity';
 
 	interface Props {
 		todo: Todo;
@@ -23,7 +24,7 @@
 	function getDueBadge(dueDate: Date | null | undefined): BadgeKind {
 		if (!dueDate) return null;
 		const due = new Date(dueDate);
-		const todayStart = new Date();
+		const todayStart = new SvelteDate();
 		todayStart.setHours(0, 0, 0, 0);
 		const todayEnd = new Date(todayStart.getTime() + 86_400_000);
 		if (due < todayStart) return 'overdue';

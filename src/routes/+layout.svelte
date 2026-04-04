@@ -5,6 +5,7 @@
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
 	import AppSidebar from '$lib/components/navigation/AppSidebar.svelte';
+	import CommandPalette from '$lib/components/navigation/CommandPalette.svelte';
 	import { page } from '$app/stores';
 
 	import type { Snippet } from 'svelte';
@@ -67,6 +68,7 @@
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 
 <Sidebar.Provider>
+	<CommandPalette />
 	<AppSidebar spaces={data.spaces ?? []} notesBySpace={data.notesBySpace ?? {}} />
 	<Sidebar.Inset>
 		<header class="flex h-12 shrink-0 items-center gap-2 border-b px-4">
