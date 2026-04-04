@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { Calendar } from '@lucide/svelte';
+	import { cn } from '$lib/utils';
 	import type { Todo } from '$lib/server/db/utils';
 
 	interface Props {
@@ -16,6 +17,19 @@
 	$effect(() => {
 		isDone = todo.status === 'done';
 	});
+
+	type BadgeKind = 'overdue' | 'today' | 'upcoming' | null;
+
+	function getDueBadge(dueDate: Date | null | undefined): BadgeKind {
+		if (!dueDate) return null;
+		const due = new Date(dueDate);
+		const todayStart = new Date();
+		todayStart.setHours(0, 0, 0, 0);
+		const todayEnd = new Date(todayStart.getTime() + 86_400_000);
+		if (due < todayStart) return 'overdue';
+		if (due < todayEnd) return 'today';
+		return 'upcoming';
+	}
 
 	function formatDate(date: Date | null | undefined): string | null {
 		if (!date) return null;
@@ -47,7 +61,15 @@
 	<a href="/spaces/{todo.spaceId}/{todo.id}" class="flex min-w-0 flex-1 items-center gap-3">
 		<span class="truncate {isDone ? 'text-muted-foreground line-through' : ''}">{todo.title}</span>
 		{#if todo.dueDate}
-			<span class="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+			{@const badge = getDueBadge(todo.dueDate)}
+			<span
+				class={cn(
+					'flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs',
+					badge === 'overdue' && 'bg-destructive/10 text-destructive',
+					badge === 'today' && 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+					badge === 'upcoming' && 'text-muted-foreground'
+				)}
+			>
 				<Calendar class="size-3" />
 				{formatDate(todo.dueDate)}
 			</span>

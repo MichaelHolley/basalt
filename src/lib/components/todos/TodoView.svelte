@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import TodoItem from '$lib/components/todos/TodoItem.svelte';
+	import { Button } from '$lib/components/ui/button';
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { Input } from '$lib/components/ui/input';
-	import { Button } from '$lib/components/ui/button';
-	import { Calendar, Pencil, Trash2, Plus, Check, X } from '@lucide/svelte';
 	import type { todos } from '$lib/server/db/schema';
 	import type { TodoWithDepth } from '$lib/server/db/utils';
+	import { Calendar, Check, Pencil, Plus, Trash2, X } from '@lucide/svelte';
 
 	interface Props {
 		todo: typeof todos.$inferSelect;
@@ -19,17 +20,12 @@
 	let titleInput = $state<HTMLInputElement | null>(null);
 	let toggleForm = $state<HTMLFormElement | null>(null);
 	let isDone = $state(false);
-	let childToggleForms = $state<Record<string, HTMLFormElement | null>>({});
-	let childDoneState = $state<Record<string, boolean>>({});
 	let addingChild = $state(false);
 	let newChildTitle = $state('');
 	let childInput = $state<HTMLInputElement | null>(null);
 
 	$effect(() => {
 		isDone = todo.status === 'done';
-	});
-	$effect(() => {
-		for (const child of children) childDoneState[child.id] = child.status === 'done';
 	});
 	$effect(() => {
 		if (editing) titleInput?.focus();
@@ -219,47 +215,8 @@
 		{/if}
 
 		{#each children as child (child.id)}
-			<div
-				class="flex items-center gap-2 rounded-md px-1 py-1"
-				style="padding-left: {(child.depth - 1) * 1.25}rem"
-			>
-				<form
-					bind:this={childToggleForms[child.id]}
-					method="POST"
-					action="?/toggle"
-					use:enhance={() =>
-						({ update }) =>
-							update({ invalidateAll: true })}
-				>
-					<input type="hidden" name="id" value={child.id} />
-					<Checkbox
-						checked={childDoneState[child.id] ?? child.status === 'done'}
-						onCheckedChange={(v) => {
-							childDoneState[child.id] = !!v;
-							childToggleForms[child.id]?.requestSubmit();
-						}}
-					/>
-				</form>
-				<a
-					href="/spaces/{child.spaceId}/{child.id}"
-					class="flex min-w-0 flex-1 items-center gap-3 text-sm"
-				>
-					<span
-						class="truncate {(childDoneState[child.id] ?? child.status === 'done')
-							? 'text-muted-foreground line-through'
-							: ''}"
-					>
-						{child.title}
-					</span>
-					{#if child.dueDate}
-						<span class="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
-							<Calendar class="size-3" />
-							{new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(
-								new Date(child.dueDate)
-							)}
-						</span>
-					{/if}
-				</a>
+			<div class="flex items-center" style="padding-left: {(child.depth - 1) * 1.25}rem">
+				<TodoItem todo={child} />
 				<form
 					method="POST"
 					action="?/deleteTodo"
