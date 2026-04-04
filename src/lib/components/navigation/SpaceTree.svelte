@@ -169,6 +169,7 @@
 									class="size-5 hover:text-destructive"
 									title="Delete"
 									onclick={(e) => {
+										e.stopPropagation();
 										if (!confirm(`Delete "${space.name}" and all its contents?`))
 											e.preventDefault();
 									}}

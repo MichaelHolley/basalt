@@ -42,10 +42,15 @@ export function deleteSpace(id: string, vaultPath: string): void {
 		fs.rmSync(folderPath, { recursive: true, force: true });
 	}
 
+	// Clean FTS for all notes in this space and any descendant spaces
 	db.run(sql`
-    DELETE FROM notes_fts WHERE note_id IN (
-      SELECT id FROM notes WHERE space_id = ${id} OR space_id LIKE ${id + '/%'}
-    )
-  `);
+		DELETE FROM notes_fts WHERE note_id IN (
+			SELECT id FROM notes WHERE space_id = ${id} OR space_id LIKE ${id + '/%'}
+		)
+	`);
+
+	// Delete descendant spaces first (no cascade on parent_id), then the space itself.
+	// The notes/todos FK cascade fires automatically when each space row is deleted.
+	db.run(sql`DELETE FROM spaces WHERE id LIKE ${id + '/%'}`);
 	db.delete(spaces).where(eq(spaces.id, id)).run();
 }
