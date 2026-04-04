@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import MilkdownEditor from '$lib/components/editor/milkdown-editor.svelte';
+	import MilkdownEditor from '@/components/notes/MarkdownEditor.svelte';
 	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
 	import { Pencil, Trash2, Check, X, Copy } from '@lucide/svelte';
