@@ -26,9 +26,11 @@ export async function reconcileVault(): Promise<void> {
 	for (const space of allSpaces) {
 		const dirPath = path.join(vaultPath, ...space.id.split('/'));
 		if (!fs.existsSync(dirPath)) {
-			db.run(
-				sql`DELETE FROM relations WHERE (source_type = 'space' AND source_id = ${space.id}) OR (target_type = 'space' AND target_id = ${space.id})`
-			);
+			db.run(sql`
+				DELETE FROM notes_fts WHERE note_id IN (
+					SELECT id FROM notes WHERE space_id = ${space.id} OR space_id LIKE ${space.id + '/%'}
+				)
+			`);
 			db.delete(spaces).where(eq(spaces.id, space.id)).run();
 		}
 	}

@@ -37,8 +37,10 @@ export function createNote(title: string, spaceId: string, vaultPath: string): s
 	fs.writeFileSync(filePath, '', 'utf-8');
 
 	const now = new Date();
-	db.insert(notes).values({ id, spaceId, title, createdAt: now, updatedAt: now }).run();
-	db.run(sql`INSERT INTO notes_fts(note_id, title, body) VALUES (${id}, ${title}, '')`);
+	db.transaction((tx) => {
+		tx.insert(notes).values({ id, spaceId, title, createdAt: now, updatedAt: now }).run();
+		tx.run(sql`INSERT INTO notes_fts(note_id, title, body) VALUES (${id}, ${title}, '')`);
+	});
 
 	return id;
 }
@@ -66,11 +68,13 @@ export function renameNote(id: string, title: string, vaultPath: string): string
 				tx.run(
 					sql`UPDATE notes SET id = ${newId}, title = ${title}, updated_at = ${Date.now()} WHERE id = ${id}`
 				);
+				tx.run(
+					sql`UPDATE notes_fts SET note_id = ${newId}, title = ${title} WHERE note_id = ${id}`
+				);
 			});
 		} finally {
 			db.run(sql`PRAGMA foreign_keys = ON`);
 		}
-		db.run(sql`UPDATE notes_fts SET note_id = ${newId}, title = ${title} WHERE note_id = ${id}`);
 	} else {
 		db.update(notes).set({ title, updatedAt: new Date() }).where(eq(notes.id, id)).run();
 		db.run(sql`UPDATE notes_fts SET title = ${title} WHERE note_id = ${id}`);
@@ -106,9 +110,11 @@ export function saveNoteContent(id: string, content: string, vaultPath: string):
 	const filePath = path.join(vaultPath, ...note.id.split('/'));
 	fs.writeFileSync(filePath, content, 'utf-8');
 
-	db.update(notes).set({ updatedAt: new Date() }).where(eq(notes.id, id)).run();
-	db.run(sql`DELETE FROM notes_fts WHERE note_id = ${id}`);
-	db.run(
-		sql`INSERT INTO notes_fts(note_id, title, body) VALUES (${id}, ${note.title}, ${content})`
-	);
+	db.transaction((tx) => {
+		tx.update(notes).set({ updatedAt: new Date() }).where(eq(notes.id, id)).run();
+		tx.run(sql`DELETE FROM notes_fts WHERE note_id = ${id}`);
+		tx.run(
+			sql`INSERT INTO notes_fts(note_id, title, body) VALUES (${id}, ${note.title}, ${content})`
+		);
+	});
 }
