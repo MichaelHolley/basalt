@@ -17,7 +17,7 @@ export function searchNotes(q: string): SearchResult[] {
       SELECT
         note_id,
         title,
-        snippet(notes_fts, 2, '<mark>', '</mark>', '…', 12) AS snippet
+        snippet(notes_fts, 2, '<mark>', '</mark>', '…', 24) AS snippet
       FROM notes_fts
       WHERE notes_fts MATCH ${ftsQuery}
       ORDER BY rank

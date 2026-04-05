@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { Button } from '$lib/components/ui/button';
-	import { FileText, CheckSquare, Plus, Check, X } from '@lucide/svelte';
+	import { FileText, SquareCheckBig, Plus, Check, X } from '@lucide/svelte';
 	import type { notes, todos } from '$lib/server/db/schema';
 
 	interface RelatedItem {
@@ -110,7 +110,7 @@
 					{#if item.type === 'note'}
 						<FileText class="size-3.5 shrink-0 text-muted-foreground" />
 					{:else}
-						<CheckSquare class="size-3.5 shrink-0 text-muted-foreground" />
+						<SquareCheckBig class="size-3.5 shrink-0 text-muted-foreground" />
 					{/if}
 					<a
 						href={item.href}

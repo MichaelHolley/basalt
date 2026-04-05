@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { SvelteMap, SvelteDate } from 'svelte/reactivity';
-	import { FileText, CheckSquare } from '@lucide/svelte';
+	import { FileText, SquareCheckBig } from '@lucide/svelte';
 	import { cn } from '$lib/utils';
 	import type { PageData } from './$types';
 	import type { SpaceNode } from '$lib/server/db/utils';
@@ -86,7 +86,7 @@
 	<!-- ── Open Todos ────────────────────────────────────────────────────── -->
 	<section>
 		<div class="mb-3 flex items-center gap-2">
-			<CheckSquare class="size-4 text-muted-foreground" />
+			<SquareCheckBig class="size-4 text-muted-foreground" />
 			<h2 class="text-sm font-semibold">Open Todos</h2>
 		</div>
 

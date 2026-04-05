@@ -52,14 +52,16 @@
 						href="/spaces/{result.note_id.replace(/\.md$/, '')}"
 						onclick={() => (open = false)}
 					>
-						<FileText />
-						<span class="truncate">{result.title}</span>
-						{#if result.snippet}
-							<span class="ml-auto truncate text-xs text-muted-foreground">
-								<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-								{@html result.snippet}
-							</span>
-						{/if}
+						<FileText class="mt-0.5 shrink-0 self-start" />
+						<div class="flex min-w-0 flex-col">
+							<span class="truncate">{result.title}</span>
+							{#if result.snippet}
+								<span class="line-clamp-2 text-xs text-muted-foreground">
+									<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+									{@html result.snippet}
+								</span>
+							{/if}
+						</div>
 					</Command.LinkItem>
 				{/each}
 			</Command.Group>
