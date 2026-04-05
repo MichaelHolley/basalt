@@ -2,6 +2,8 @@
 
 A local-first, single-user notes app. Notes are stored as plain `.md` files on disk inside a vault directory you choose. A SQLite database acts as a fast index for querying, search, and structured data — it's always a cache and can be deleted and rebuilt at any time.
 
+<img width="1356" height="1008" alt="image" src="https://github.com/user-attachments/assets/30277795-6415-4318-a687-9c6619d899de" />
+
 ## Features
 
 - **Spaces** — organize notes and todos into nestable folders
