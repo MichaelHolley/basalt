@@ -14,6 +14,7 @@
 		Check,
 		X
 	} from '@lucide/svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import type { SpaceNode, Note } from '$lib/server/db/utils';
 	import SpaceTree from '$lib/components/navigation/SpaceTree.svelte';
 
@@ -25,7 +26,7 @@
 
 	let { spaces, notesBySpace = {}, depth = 0 }: Props = $props();
 
-	let collapsedSpaces = $state(new Set<string>());
+	let collapsedSpaces = new SvelteSet<string>();
 	let editingId = $state<string | null>(null);
 	let editingName = $state('');
 	let addingChildOf = $state<string | null>(null);
@@ -37,10 +38,8 @@
 	let addNoteInput = $state<HTMLInputElement | null>(null);
 
 	function toggleCollapse(spaceId: string) {
-		const next = new Set(collapsedSpaces);
-		if (next.has(spaceId)) next.delete(spaceId);
-		else next.add(spaceId);
-		collapsedSpaces = next;
+		if (collapsedSpaces.has(spaceId)) collapsedSpaces.delete(spaceId);
+		else collapsedSpaces.add(spaceId);
 	}
 
 	function startEdit(space: SpaceNode) {
