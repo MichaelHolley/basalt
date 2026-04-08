@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { slide } from 'svelte/transition';
 	import { enhance } from '$app/forms';
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import { Input } from '$lib/components/ui/input';
@@ -208,99 +209,101 @@
 		{/if}
 
 		{#if hasChildren && !collapsedSpaces.has(space.id)}
-			<Sidebar.MenuSub class="mr-0 ml-1.5 pr-0 pl-1.5">
-				{#if addingNoteFor === space.id}
-					<Sidebar.MenuSubItem class="mr-0 ml-1.5 pr-0 pl-1.5">
-						<form
-							method="POST"
-							action="/notes?/create"
-							use:enhance={() => {
-								return ({ update }) => {
-									cancelAddNote();
-									update({ invalidateAll: true });
-								};
-							}}
-							class="flex items-center gap-1 px-2 py-1"
-						>
-							<input type="hidden" name="spaceId" value={space.id} />
-							<Input
-								name="title"
-								bind:value={newNoteName}
-								bind:ref={addNoteInput}
-								placeholder="Note title"
-								class="h-6 flex-1 text-xs"
-							/>
-							<Button type="submit" variant="ghost" size="icon" class="size-5 text-primary">
-								<Check class="size-3" />
-							</Button>
-							<Button
-								type="button"
-								variant="ghost"
-								size="icon"
-								class="size-5"
-								onclick={cancelAddNote}
+			<div transition:slide={{ duration: 150 }}>
+				<Sidebar.MenuSub class="mr-0 ml-1.5 pr-0 pl-1.5">
+					{#if addingNoteFor === space.id}
+						<Sidebar.MenuSubItem class="mr-0 ml-1.5 pr-0 pl-1.5">
+							<form
+								method="POST"
+								action="/notes?/create"
+								use:enhance={() => {
+									return ({ update }) => {
+										cancelAddNote();
+										update({ invalidateAll: true });
+									};
+								}}
+								class="flex items-center gap-1 px-2 py-1"
 							>
-								<X class="size-3" />
-							</Button>
-						</form>
-					</Sidebar.MenuSubItem>
-				{/if}
+								<input type="hidden" name="spaceId" value={space.id} />
+								<Input
+									name="title"
+									bind:value={newNoteName}
+									bind:ref={addNoteInput}
+									placeholder="Note title"
+									class="h-6 flex-1 text-xs"
+								/>
+								<Button type="submit" variant="ghost" size="icon" class="size-5 text-primary">
+									<Check class="size-3" />
+								</Button>
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon"
+									class="size-5"
+									onclick={cancelAddNote}
+								>
+									<X class="size-3" />
+								</Button>
+							</form>
+						</Sidebar.MenuSubItem>
+					{/if}
 
-				{#each spaceNotes as note (note.id)}
-					<Sidebar.MenuSubItem>
-						<Sidebar.MenuSubButton>
-							{#snippet child({ props })}
-								<a href="/spaces/{note.id.replace(/\.md$/, '')}" {...props}>
-									<FileText class="size-3.5 shrink-0" />
-									<span class="truncate">{note.title}</span>
-								</a>
-							{/snippet}
-						</Sidebar.MenuSubButton>
-					</Sidebar.MenuSubItem>
-				{/each}
+					{#each spaceNotes as note (note.id)}
+						<Sidebar.MenuSubItem>
+							<Sidebar.MenuSubButton>
+								{#snippet child({ props })}
+									<a href="/spaces/{note.id.replace(/\.md$/, '')}" {...props}>
+										<FileText class="size-3.5 shrink-0" />
+										<span class="truncate">{note.title}</span>
+									</a>
+								{/snippet}
+							</Sidebar.MenuSubButton>
+						</Sidebar.MenuSubItem>
+					{/each}
 
-				{#if addingChildOf === space.id}
-					<Sidebar.MenuSubItem>
-						<form
-							method="POST"
-							action="/spaces?/create"
-							use:enhance={() => {
-								return ({ update }) => {
-									cancelAddChild();
-									update({ invalidateAll: true });
-								};
-							}}
-							class="flex items-center gap-1 px-2 py-1"
-							style="padding-left: {(depth + 1) * 12 + 8}px"
-						>
-							<input type="hidden" name="parentId" value={space.id} />
-							<Input
-								name="name"
-								bind:value={newChildName}
-								bind:ref={addChildInput}
-								placeholder="Space name"
-								class="h-6 flex-1 text-xs"
-							/>
-							<Button type="submit" variant="ghost" size="icon" class="size-5 text-primary">
-								<Check class="size-3" />
-							</Button>
-							<Button
-								type="button"
-								variant="ghost"
-								size="icon"
-								class="size-5"
-								onclick={cancelAddChild}
+					{#if addingChildOf === space.id}
+						<Sidebar.MenuSubItem>
+							<form
+								method="POST"
+								action="/spaces?/create"
+								use:enhance={() => {
+									return ({ update }) => {
+										cancelAddChild();
+										update({ invalidateAll: true });
+									};
+								}}
+								class="flex items-center gap-1 px-2 py-1"
+								style="padding-left: {(depth + 1) * 12 + 8}px"
 							>
-								<X class="size-3" />
-							</Button>
-						</form>
-					</Sidebar.MenuSubItem>
-				{/if}
+								<input type="hidden" name="parentId" value={space.id} />
+								<Input
+									name="name"
+									bind:value={newChildName}
+									bind:ref={addChildInput}
+									placeholder="Space name"
+									class="h-6 flex-1 text-xs"
+								/>
+								<Button type="submit" variant="ghost" size="icon" class="size-5 text-primary">
+									<Check class="size-3" />
+								</Button>
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon"
+									class="size-5"
+									onclick={cancelAddChild}
+								>
+									<X class="size-3" />
+								</Button>
+							</form>
+						</Sidebar.MenuSubItem>
+					{/if}
 
-				{#if space.children.length > 0}
-					<SpaceTree spaces={space.children} {notesBySpace} depth={depth + 1} />
-				{/if}
-			</Sidebar.MenuSub>
+					{#if space.children.length > 0}
+						<SpaceTree spaces={space.children} {notesBySpace} depth={depth + 1} />
+					{/if}
+				</Sidebar.MenuSub>
+			</div>
 		{/if}
 	</Sidebar.MenuItem>
 {/each}
