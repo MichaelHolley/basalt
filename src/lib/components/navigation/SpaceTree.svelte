@@ -184,9 +184,9 @@
 		{/if}
 
 		{#if hasChildren}
-			<Sidebar.MenuSub class="pr-0">
+			<Sidebar.MenuSub class="mr-0 ml-1.5 pr-0 pl-1.5">
 				{#if addingNoteFor === space.id}
-					<Sidebar.MenuSubItem>
+					<Sidebar.MenuSubItem class="mr-0 ml-1.5 pr-0 pl-1.5">
 						<form
 							method="POST"
 							action="/notes?/create"
