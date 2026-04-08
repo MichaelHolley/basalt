@@ -53,6 +53,8 @@ Migration-Files and related files must be generated. Any modification is prohibi
 
 Svelte 5 runes (`$state`, `$derived`, `$effect`) are used throughout. Rune mode is enabled globally via `svelte.config.js`.
 
+[runed](https://runed.dev) is used for reactive utilities — prefer `Debounced` + `watch` over manual `setTimeout`/`clearTimeout` for debouncing.
+
 In a page or component there must be a strict hierarchy from top to bottom:
 
 1. defining interfaces and types

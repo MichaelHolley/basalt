@@ -18,6 +18,7 @@ A local-first, single-user notes app. Notes are stored as plain `.md` files on d
 - [Drizzle ORM](https://orm.drizzle.team) + `bun:sqlite` — database
 - [Milkdown Crepe](https://milkdown.dev) — WYSIWYG markdown editor
 - [Tailwind CSS v4](https://tailwindcss.com) + [shadcn-svelte](https://www.shadcn-svelte.com) — styling
+- [runed](https://runed.dev) — Svelte 5 reactive utilities (debouncing, watching)
 
 ## Setup
 
