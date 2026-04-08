@@ -5,6 +5,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Pencil, Trash2, Check, X, Copy } from '@lucide/svelte';
 	import type { notes } from '$lib/server/db/schema';
+	import { Debounced, watch } from 'runed';
 
 	interface Props {
 		note: typeof notes.$inferSelect;
@@ -17,8 +18,9 @@
 	let editTitle = $state('');
 	let titleInput = $state<HTMLInputElement | null>(null);
 	let currentContent = $state('');
-	let saveTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
+	let pendingSave = $state<string | null>(null);
 	let copied = $state(false);
+	const debouncedSave = new Debounced(() => pendingSave, 1000);
 
 	$effect(() => {
 		currentContent = content;
@@ -27,22 +29,22 @@
 		if (editing) titleInput?.focus();
 	});
 
+	watch(
+		() => debouncedSave.current,
+		() => {
+			if (debouncedSave.current === null) return;
+			fetch('/api/notes/autosave', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ id: note.id, content: debouncedSave.current })
+			});
+		},
+		{ lazy: true }
+	);
+
 	function handleContentChange(newContent: string) {
 		currentContent = newContent;
-		const noteId = note.id;
-		const existing = saveTimeouts.get(noteId);
-		if (existing) clearTimeout(existing);
-		saveTimeouts.set(
-			noteId,
-			setTimeout(() => {
-				fetch('/api/notes/autosave', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ id: noteId, content: newContent })
-				});
-				saveTimeouts.delete(noteId);
-			}, 1000)
-		);
+		pendingSave = newContent;
 	}
 
 	function copyMarkdown() {

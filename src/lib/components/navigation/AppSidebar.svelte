@@ -6,6 +6,7 @@
 	import { House, Settings, Plus, Check, X, Search, FileText } from '@lucide/svelte';
 	import SpaceTree from '$lib/components/navigation/SpaceTree.svelte';
 	import type { SpaceNode, Note } from '$lib/server/db/utils';
+	import { Debounced, watch } from 'runed';
 
 	interface Props {
 		spaces?: SpaceNode[];
@@ -21,20 +22,21 @@
 	// Search
 	let searchQuery = $state('');
 	let searchResults = $state<{ note_id: string; title: string; snippet: string }[]>([]);
-	let searchDebounce: ReturnType<typeof setTimeout> | null = null;
+	const debouncedQuery = new Debounced(() => searchQuery, 200);
 
-	function handleSearch() {
-		if (searchDebounce) clearTimeout(searchDebounce);
-		if (!searchQuery.trim()) {
-			searchResults = [];
-			return;
-		}
-		searchDebounce = setTimeout(async () => {
-			const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
-			const data = await res.json();
-			searchResults = data.results ?? [];
-		}, 200);
-	}
+	watch(
+		() => debouncedQuery.current,
+		() => {
+			if (!debouncedQuery.current.trim()) {
+				searchResults = [];
+				return;
+			}
+			fetch(`/api/search?q=${encodeURIComponent(debouncedQuery.current)}`)
+				.then((res) => res.json())
+				.then((data) => (searchResults = data.results ?? []));
+		},
+		{ lazy: true }
+	);
 
 	function clearSearch() {
 		searchQuery = '';
@@ -88,7 +90,6 @@
 					type="search"
 					placeholder="Search notes…"
 					bind:value={searchQuery}
-					oninput={handleSearch}
 					class="h-7 w-full rounded-md border border-input bg-background pr-2 pl-6 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-1"
 				/>
 			</div>

@@ -1,11 +1,13 @@
 <script lang="ts">
 	import * as Command from '$lib/components/ui/command';
 	import { FileText } from '@lucide/svelte';
+	import { Debounced, watch } from 'runed';
 
 	// ── State ──────────────────────────────────────────────────────────────────
 	let open = $state(false);
 	let query = $state('');
 	let results = $state<{ note_id: string; title: string; snippet: string }[]>([]);
+	const debouncedQuery = new Debounced(() => query, 200);
 
 	// ── Effects ────────────────────────────────────────────────────────────────
 	$effect(() => {
@@ -18,15 +20,20 @@
 	$effect(() => {
 		if (!query.trim()) {
 			results = [];
-			return;
+			debouncedQuery.cancel();
 		}
-		const timer = setTimeout(async () => {
-			const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-			const data = await res.json();
-			results = data.results ?? [];
-		}, 200);
-		return () => clearTimeout(timer);
 	});
+
+	watch(
+		() => debouncedQuery.current,
+		() => {
+			if (!debouncedQuery.current.trim()) return;
+			fetch(`/api/search?q=${encodeURIComponent(debouncedQuery.current)}`)
+				.then((res) => res.json())
+				.then((data) => (results = data.results ?? []));
+		},
+		{ lazy: true }
+	);
 
 	// ── Functions ──────────────────────────────────────────────────────────────
 	function handleKeydown(e: KeyboardEvent) {
