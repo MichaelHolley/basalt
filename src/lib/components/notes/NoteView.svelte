@@ -17,7 +17,7 @@
 	let editTitle = $state('');
 	let titleInput = $state<HTMLInputElement | null>(null);
 	let currentContent = $state('');
-	let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+	let saveTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
 	let copied = $state(false);
 
 	$effect(() => {
@@ -29,14 +29,20 @@
 
 	function handleContentChange(newContent: string) {
 		currentContent = newContent;
-		if (saveTimeout) clearTimeout(saveTimeout);
-		saveTimeout = setTimeout(() => {
-			fetch('/api/notes/autosave', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ id: note.id, content: newContent })
-			});
-		}, 1000);
+		const noteId = note.id;
+		const existing = saveTimeouts.get(noteId);
+		if (existing) clearTimeout(existing);
+		saveTimeouts.set(
+			noteId,
+			setTimeout(() => {
+				fetch('/api/notes/autosave', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ id: noteId, content: newContent })
+				});
+				saveTimeouts.delete(noteId);
+			}, 1000)
+		);
 	}
 
 	function copyMarkdown() {
