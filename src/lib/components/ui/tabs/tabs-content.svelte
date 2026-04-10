@@ -1,24 +1,17 @@
 <script lang="ts">
 	import { Tabs as TabsPrimitive } from 'bits-ui';
-	import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
-	import type { Snippet } from 'svelte';
+	import { cn } from '$lib/utils.js';
 
 	let {
 		ref = $bindable(null),
 		class: className,
-		children,
 		...restProps
-	}: WithoutChildrenOrChild<TabsPrimitive.ContentProps> & {
-		ref?: HTMLElement | null;
-		children?: Snippet;
-	} = $props();
+	}: TabsPrimitive.ContentProps = $props();
 </script>
 
 <TabsPrimitive.Content
 	bind:ref
 	data-slot="tabs-content"
-	class={cn('mt-2 focus-visible:outline-none', className)}
+	class={cn('flex-1 text-sm outline-none', className)}
 	{...restProps}
->
-	{@render children?.()}
-</TabsPrimitive.Content>
+/>
