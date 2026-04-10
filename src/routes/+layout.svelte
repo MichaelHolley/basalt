@@ -63,9 +63,19 @@
 			return { label, href, isLast };
 		});
 	});
+
+	let pageTitle = $derived(() => {
+		const segs = breadcrumbSegments();
+		if (segs.length === 0) return 'Basalt';
+		const labels = segs.map((s) => s.label).reverse();
+		return labels.join(' — ') + ' | Basalt';
+	});
 </script>
 
-<svelte:head><link rel="icon" href={favicon} /></svelte:head>
+<svelte:head>
+	<title>{pageTitle()}</title>
+	<link rel="icon" href={favicon} />
+</svelte:head>
 
 <Sidebar.Provider>
 	<CommandPalette />
