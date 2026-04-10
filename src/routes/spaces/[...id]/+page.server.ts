@@ -19,11 +19,13 @@ import {
 	getTodosByRootSpace,
 	getTodoChildren,
 	getTodoGrandchildren,
+	getTodoDepth,
 	renameTodo,
 	toggleTodo,
 	setTodoDueDate,
 	createTodo,
-	deleteTodo
+	deleteTodo,
+	MAX_TODO_DEPTH
 } from '$lib/server/service/todo.service';
 import {
 	getRelationsForItem,
@@ -92,6 +94,8 @@ export const load: PageServerLoad = async ({ params }) => {
 			type: 'todo' as const,
 			todo,
 			children,
+			depth: getTodoDepth(todoId),
+			maxDepth: MAX_TODO_DEPTH,
 			relatedItems,
 			allNotes: getNotesByRootSpace(rootSpace),
 			allTodos: getTodosByRootSpace(rootSpace)

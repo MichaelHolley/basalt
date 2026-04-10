@@ -3,6 +3,9 @@ import { nanoid } from 'nanoid';
 import { db } from '$lib/server/db';
 import { todos } from '$lib/server/db/schema';
 
+// 0-indexed: depth 0 = root, 1 = child, 2 = grandchild (max parent)
+export const MAX_TODO_DEPTH = 2;
+
 export function getTopLevelTodos() {
 	return db.select().from(todos).where(isNull(todos.parentId)).orderBy(asc(todos.createdAt)).all();
 }
@@ -62,7 +65,8 @@ export function createTodo(title: string, spaceId: string, parentId?: string): s
 		const parent = getTodo(parentId);
 		if (!parent) throw new Error('Parent todo not found');
 		const parentDepth = getTodoDepth(parentId);
-		if (parentDepth >= 2) throw new Error('Todos can only be nested up to 3 levels deep');
+		if (parentDepth >= MAX_TODO_DEPTH)
+			throw new Error('Todos can only be nested up to 3 levels deep');
 	}
 
 	const id = nanoid();

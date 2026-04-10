@@ -24,15 +24,21 @@
 		</div>
 	</div>
 {:else if data.type === 'todo'}
+	{@const todoData = data as Extract<typeof data, { type: 'todo' }>}
 	<div class="flex h-full">
-		<TodoView todo={data.todo} children={data.children} />
+		<TodoView
+			todo={todoData.todo}
+			children={todoData.children}
+			depth={todoData.depth}
+			maxDepth={todoData.maxDepth}
+		/>
 		<div class="w-56 shrink-0 overflow-y-auto border-l px-3 py-3">
 			<RelationsPanel
 				currentType="todo"
-				currentId={data.todo.id}
-				relatedItems={data.relatedItems}
-				allNotes={data.allNotes}
-				allTodos={data.allTodos}
+				currentId={todoData.todo.id}
+				relatedItems={todoData.relatedItems}
+				allNotes={todoData.allNotes}
+				allTodos={todoData.allTodos}
 			/>
 		</div>
 	</div>

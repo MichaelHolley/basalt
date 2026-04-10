@@ -11,9 +11,11 @@
 	interface Props {
 		todo: typeof todos.$inferSelect;
 		children: TodoWithDepth[];
+		depth: number;
+		maxDepth: number;
 	}
 
-	let { todo, children }: Props = $props();
+	let { todo, children, depth, maxDepth }: Props = $props();
 
 	let editing = $state(false);
 	let editTitle = $state('');
@@ -23,6 +25,9 @@
 	let addingChild = $state(false);
 	let newChildTitle = $state('');
 	let childInput = $state<HTMLInputElement | null>(null);
+	let childError = $state('');
+
+	let atMaxDepth = $derived(depth >= maxDepth);
 
 	$effect(() => {
 		isDone = todo.status === 'done';
@@ -169,13 +174,20 @@
 	<!-- Subtasks -->
 	<div class="flex flex-col gap-1">
 		<div class="flex items-center justify-between">
-			<h2 class="text-xs font-medium tracking-wider text-muted-foreground uppercase">Subtasks</h2>
+			<h2 class="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+				Subtasks{#if atMaxDepth}&nbsp;<span class="font-normal text-muted-foreground/60 normal-case"
+						>(max depth reached)</span
+					>{/if}
+			</h2>
 			<Button
 				variant="ghost"
 				size="icon"
 				class="size-6"
-				onclick={() => (addingChild = true)}
-				title="Add subtask"
+				disabled={atMaxDepth}
+				onclick={() => {
+					if (!atMaxDepth) addingChild = true;
+				}}
+				title={atMaxDepth ? 'Subtasks can only be nested 3 levels deep' : 'Add subtask'}
 			>
 				<Plus class="size-3.5" />
 			</Button>
@@ -186,10 +198,15 @@
 				method="POST"
 				action="?/createChild"
 				use:enhance={() =>
-					({ update }) => {
+					async ({ result, update }) => {
+						if (result.type === 'failure') {
+							childError = (result.data as { error?: string })?.error ?? 'Failed to create subtask';
+							return;
+						}
 						addingChild = false;
 						newChildTitle = '';
-						update({ invalidateAll: true });
+						childError = '';
+						await update({ invalidateAll: true });
 					}}
 				class="flex items-center gap-2"
 			>
@@ -204,10 +221,20 @@
 				<Button type="submit" variant="ghost" size="icon" class="text-primary"
 					><Check class="size-4" /></Button
 				>
-				<Button type="button" variant="ghost" size="icon" onclick={() => (addingChild = false)}
-					><X class="size-4" /></Button
+				<Button
+					type="button"
+					variant="ghost"
+					size="icon"
+					onclick={() => {
+						addingChild = false;
+						childError = '';
+					}}><X class="size-4" /></Button
 				>
 			</form>
+		{/if}
+
+		{#if childError}
+			<p class="text-xs text-destructive">{childError}</p>
 		{/if}
 
 		{#if children.length === 0 && !addingChild}
