@@ -64,7 +64,7 @@
 		});
 	});
 
-	let pageTitle = $derived(() => {
+	let pageTitle = $derived.by(() => {
 		const segs = breadcrumbSegments();
 		if (segs.length === 0) return 'Basalt';
 		const labels = segs.map((s) => s.label).reverse();
@@ -73,7 +73,7 @@
 </script>
 
 <svelte:head>
-	<title>{pageTitle()}</title>
+	<title>{pageTitle}</title>
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
