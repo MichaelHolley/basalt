@@ -127,7 +127,7 @@
 	}
 
 	function submitCreate() {
-		if (!nameValue.trim() || !activeSpaceId) return;
+		if (!nameValue.trim() || !activeSpaceId || createMode === 'space') return;
 		createFormEl?.requestSubmit();
 	}
 
@@ -145,7 +145,7 @@
 		<form
 			bind:this={createFormEl}
 			method="POST"
-			action="/notes?/create"
+			action={createMode === 'note' ? '/notes?/create' : '/todos?/create'}
 			use:enhance={() =>
 				({ update }) => {
 					open = false;
