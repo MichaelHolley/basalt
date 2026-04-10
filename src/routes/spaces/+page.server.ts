@@ -30,13 +30,14 @@ export const actions: Actions = {
 
 		const config = getConfig();
 
+		let id: string;
 		try {
-			createSpace(result.data.name, result.data.parentId, config.vaultPath);
+			id = createSpace(result.data.name, result.data.parentId, config.vaultPath);
 		} catch (e) {
 			return fail(400, { error: (e as Error).message });
 		}
 
-		return { success: true };
+		return { success: true, id };
 	},
 
 	rename: async ({ request }) => {

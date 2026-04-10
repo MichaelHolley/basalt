@@ -1,6 +1,7 @@
 <script lang="ts">
 	import * as Command from '$lib/components/ui/command';
 	import { enhance } from '$app/forms';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { FileText, ListTodo, FolderPlus, ArrowLeft } from '@lucide/svelte';
 	import { Debounced, watch } from 'runed';
@@ -127,7 +128,8 @@
 	}
 
 	function submitCreate() {
-		if (!nameValue.trim() || !activeSpaceId || createMode === 'space') return;
+		if (!nameValue.trim()) return;
+		if (createMode !== 'space' && !activeSpaceId) return;
 		createFormEl?.requestSubmit();
 	}
 
@@ -142,58 +144,86 @@
 
 <Command.Dialog bind:open shouldFilter={false}>
 	{#if createMode}
-		<form
-			bind:this={createFormEl}
-			method="POST"
-			action={createMode === 'note' ? '/notes?/create' : '/todos?/create'}
-			use:enhance={() =>
-				({ update }) => {
-					open = false;
-					nameValue = '';
-					return update({ invalidateAll: true });
-				}}
-		>
-			<input type="hidden" name="spaceId" value={activeSpaceId ?? ''} />
-
-			<div class="flex items-center gap-2 border-b p-1 pb-1">
-				<button
-					type="button"
-					class="flex items-center justify-center rounded p-1 text-muted-foreground hover:text-foreground"
-					onclick={() => {
-						createMode = null;
-						nameValue = '';
-					}}
-					aria-label="Back to search"
-				>
-					<ArrowLeft class="size-4" />
-				</button>
-				<span class="text-xs font-medium text-muted-foreground">{createLabel(createMode)}</span>
-				{#if activeSpaceName}
-					<span
-						class="rounded-sm bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
-						title={activeSpaceId ?? ''}
-					>
-						{activeSpaceName}
-					</span>
-				{/if}
-				<input
-					name="title"
-					bind:this={nameInputEl}
-					bind:value={nameValue}
-					class="h-8 flex-1 bg-transparent text-sm outline-hidden placeholder:text-muted-foreground"
-					placeholder="Enter name…"
-					onkeydown={(e) => {
-						if (e.key === 'Enter') {
-							e.preventDefault();
-							submitCreate();
+		{#if createMode === 'space'}
+			<form
+				bind:this={createFormEl}
+				method="POST"
+				action="/spaces?/create"
+				use:enhance={() =>
+					async ({ result, update }) => {
+						if (result.type === 'success' && result.data?.id) {
+							open = false;
+							nameValue = '';
+							await goto(`/spaces/${result.data.id}`);
+							await update({ invalidateAll: true });
+						} else {
+							await update();
 						}
 					}}
-				/>
-			</div>
-		</form>
+			>
+				{#if activeSpaceId}
+					<input type="hidden" name="parentId" value={activeSpaceId} />
+				{/if}
+				<input type="hidden" name="name" value={nameValue} />
+			</form>
+		{:else}
+			<form
+				bind:this={createFormEl}
+				method="POST"
+				action={createMode === 'note' ? '/notes?/create' : '/todos?/create'}
+				use:enhance={() =>
+					({ update }) => {
+						open = false;
+						nameValue = '';
+						return update({ invalidateAll: true });
+					}}
+			>
+				<input type="hidden" name="spaceId" value={activeSpaceId ?? ''} />
+				<input type="hidden" name="title" value={nameValue} />
+			</form>
+		{/if}
+
+		<div class="flex items-center gap-2 border-b p-1 pb-1">
+			<button
+				type="button"
+				class="flex items-center justify-center rounded p-1 text-muted-foreground hover:text-foreground"
+				onclick={() => {
+					createMode = null;
+					nameValue = '';
+				}}
+				aria-label="Back to search"
+			>
+				<ArrowLeft class="size-4" />
+			</button>
+			<span class="text-xs font-medium text-muted-foreground">{createLabel(createMode)}</span>
+			{#if createMode === 'space'}
+				<span class="rounded-sm bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+					{activeSpaceName ?? 'root'}
+				</span>
+			{:else if activeSpaceName}
+				<span
+					class="rounded-sm bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
+					title={activeSpaceId ?? ''}
+				>
+					{activeSpaceName}
+				</span>
+			{/if}
+			<input
+				bind:this={nameInputEl}
+				bind:value={nameValue}
+				class="h-8 flex-1 bg-transparent text-sm outline-hidden placeholder:text-muted-foreground"
+				placeholder="Enter name…"
+				onkeydown={(e) => {
+					if (e.key === 'Enter') {
+						e.preventDefault();
+						submitCreate();
+					}
+				}}
+			/>
+		</div>
 
 		<div class="px-3 py-4 text-center text-xs text-muted-foreground">
-			{#if activeSpaceId}
+			{#if createMode === 'space' || activeSpaceId}
 				Press <kbd class="rounded border px-1 py-0.5 font-mono text-xs">Enter</kbd> to create ·
 				<kbd class="rounded border px-1 py-0.5 font-mono text-xs">Esc</kbd> to go back
 			{:else}
