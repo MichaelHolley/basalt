@@ -6,7 +6,7 @@ CREATE TABLE `__new_relations` (
 	`target_type` text NOT NULL,
 	`target_id` text NOT NULL,
 	`created_at` integer NOT NULL,
-	CONSTRAINT "no_todo_todo_relation" CHECK(NOT ("__new_relations"."source_type" = 'todo' AND "__new_relations"."target_type" = 'todo'))
+	CONSTRAINT "no_todo_todo_relation" CHECK(NOT (source_type = 'todo' AND target_type = 'todo'))
 );
 --> statement-breakpoint
 DELETE FROM `relations` WHERE `source_type` = 'todo' AND `target_type` = 'todo';--> statement-breakpoint
