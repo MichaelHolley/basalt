@@ -115,12 +115,7 @@
 			"foreignKeys": {},
 			"compositePrimaryKeys": {},
 			"uniqueConstraints": {},
-			"checkConstraints": {
-				"no_todo_todo_relation": {
-					"name": "no_todo_todo_relation",
-					"value": "NOT (\"relations\".\"source_type\" = 'todo' AND \"relations\".\"target_type\" = 'todo')"
-				}
-			}
+			"checkConstraints": {}
 		},
 		"spaces": {
 			"name": "spaces",

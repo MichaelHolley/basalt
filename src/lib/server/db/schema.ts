@@ -1,5 +1,4 @@
-import { sqliteTable, text, integer, uniqueIndex, check } from 'drizzle-orm/sqlite-core';
-import { sql } from 'drizzle-orm';
+import { sqliteTable, text, integer, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 export const spaces = sqliteTable('spaces', {
 	id: text('id').primaryKey(), // relative path from vault root e.g. "work/clients"
@@ -46,7 +45,6 @@ export const relations = sqliteTable(
 		createdAt: integer('created_at', { mode: 'timestamp' }).notNull()
 	},
 	(t) => [
-		uniqueIndex('relations_pair_unique').on(t.sourceType, t.sourceId, t.targetType, t.targetId),
-		check('no_todo_todo_relation', sql`NOT (${t.sourceType} = 'todo' AND ${t.targetType} = 'todo')`)
+		uniqueIndex('relations_pair_unique').on(t.sourceType, t.sourceId, t.targetType, t.targetId)
 	]
 );
