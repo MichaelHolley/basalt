@@ -72,6 +72,10 @@ export function createRelation(
 		throw new Error('Cannot create a relation to itself');
 	}
 
+	if (currentType === 'todo' && targetType === 'todo') {
+		throw new Error('Cannot create a relation between two todos');
+	}
+
 	const [source, target] = normalizeRelation(
 		{ type: currentType, id: currentId },
 		{ type: targetType, id: targetId }

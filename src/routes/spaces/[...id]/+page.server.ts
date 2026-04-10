@@ -270,6 +270,10 @@ export const actions: Actions = {
 
 		const { currentType, currentId, targetType, targetId } = result.data;
 
+		if (currentType === 'todo' && targetType === 'todo') {
+			return fail(400, { error: 'Cannot create a relation between two todos' });
+		}
+
 		try {
 			createRelation(currentType, currentId, targetType, targetId);
 		} catch (e) {
