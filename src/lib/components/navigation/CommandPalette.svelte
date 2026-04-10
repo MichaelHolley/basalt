@@ -1,7 +1,10 @@
 <script lang="ts">
 	import * as Command from '$lib/components/ui/command';
+	import { enhance } from '$app/forms';
+	import { page } from '$app/stores';
 	import { FileText, ListTodo, FolderPlus, ArrowLeft } from '@lucide/svelte';
 	import { Debounced, watch } from 'runed';
+	import type { SpaceNode } from '$lib/server/db/utils';
 
 	// ── Types ──────────────────────────────────────────────────────────────────
 	type CreateAction = 'note' | 'todo' | 'space';
@@ -12,6 +15,9 @@
 		icon: typeof FileText;
 	}
 
+	// ── Props ──────────────────────────────────────────────────────────────────
+	let { spaces = [] }: { spaces: SpaceNode[] } = $props();
+
 	// ── State ──────────────────────────────────────────────────────────────────
 	let open = $state(false);
 	let query = $state('');
@@ -19,6 +25,7 @@
 	let createMode = $state<CreateAction | null>(null);
 	let nameValue = $state('');
 	let nameInputEl = $state<HTMLInputElement | null>(null);
+	let createFormEl = $state<HTMLFormElement | null>(null);
 	const debouncedQuery = new Debounced(() => query, 200);
 
 	const createCommands: CreateCommand[] = [
@@ -28,6 +35,30 @@
 	];
 
 	// ── Derived ────────────────────────────────────────────────────────────────
+	let activeSpaceId = $derived.by(() => {
+		const pd = $page.data as Record<string, unknown>;
+		if (pd.type === 'space') return (pd.space as { id: string } | undefined)?.id ?? null;
+		if (pd.type === 'note') return (pd.note as { spaceId: string } | undefined)?.spaceId ?? null;
+		if (pd.type === 'todo') return (pd.todo as { spaceId: string } | undefined)?.spaceId ?? null;
+		return null;
+	});
+
+	let spaceNameMap = $derived.by(() => {
+		const map = new Map<string, string>();
+		function flatten(nodes: SpaceNode[]) {
+			for (const n of nodes) {
+				map.set(n.id, n.name);
+				flatten(n.children);
+			}
+		}
+		flatten(spaces);
+		return map;
+	});
+
+	let activeSpaceName = $derived(
+		activeSpaceId ? (spaceNameMap.get(activeSpaceId) ?? activeSpaceId) : null
+	);
+
 	let visibleCreateCommands = $derived(
 		query.trim()
 			? createCommands.filter((cmd) => cmd.label.toLowerCase().includes(query.toLowerCase()))
@@ -95,6 +126,11 @@
 		nameValue = '';
 	}
 
+	function submitCreate() {
+		if (!nameValue.trim() || !activeSpaceId) return;
+		createFormEl?.requestSubmit();
+	}
+
 	function createLabel(action: CreateAction): string {
 		if (action === 'note') return 'New Note';
 		if (action === 'todo') return 'New Todo';
@@ -106,9 +142,22 @@
 
 <Command.Dialog bind:open shouldFilter={false}>
 	{#if createMode}
-		<div class="flex flex-col">
-			<div class="flex items-center gap-2 border-b p-1 pb-0 pb-1">
+		<form
+			bind:this={createFormEl}
+			method="POST"
+			action="/notes?/create"
+			use:enhance={() =>
+				({ update }) => {
+					open = false;
+					nameValue = '';
+					return update({ invalidateAll: true });
+				}}
+		>
+			<input type="hidden" name="spaceId" value={activeSpaceId ?? ''} />
+
+			<div class="flex items-center gap-2 border-b p-1 pb-1">
 				<button
+					type="button"
 					class="flex items-center justify-center rounded p-1 text-muted-foreground hover:text-foreground"
 					onclick={() => {
 						createMode = null;
@@ -119,17 +168,39 @@
 					<ArrowLeft class="size-4" />
 				</button>
 				<span class="text-xs font-medium text-muted-foreground">{createLabel(createMode)}</span>
+				{#if activeSpaceName}
+					<span
+						class="rounded-sm bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
+						title={activeSpaceId ?? ''}
+					>
+						{activeSpaceName}
+					</span>
+				{/if}
 				<input
+					name="title"
 					bind:this={nameInputEl}
 					bind:value={nameValue}
 					class="h-8 flex-1 bg-transparent text-sm outline-hidden placeholder:text-muted-foreground"
 					placeholder="Enter name…"
+					onkeydown={(e) => {
+						if (e.key === 'Enter') {
+							e.preventDefault();
+							submitCreate();
+						}
+					}}
 				/>
 			</div>
-			<div class="px-3 py-4 text-center text-xs text-muted-foreground">
+		</form>
+
+		<div class="px-3 py-4 text-center text-xs text-muted-foreground">
+			{#if activeSpaceId}
 				Press <kbd class="rounded border px-1 py-0.5 font-mono text-xs">Enter</kbd> to create ·
 				<kbd class="rounded border px-1 py-0.5 font-mono text-xs">Esc</kbd> to go back
-			</div>
+			{:else}
+				<span class="text-amber-500">No active space — navigate to a space first</span>
+				·
+				<kbd class="rounded border px-1 py-0.5 font-mono text-xs">Esc</kbd> to go back
+			{/if}
 		</div>
 	{:else}
 		<Command.Input placeholder="Search notes…" bind:value={query} />

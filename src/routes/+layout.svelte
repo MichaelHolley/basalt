@@ -78,7 +78,7 @@
 </svelte:head>
 
 <Sidebar.Provider>
-	<CommandPalette />
+	<CommandPalette spaces={data.spaces ?? []} />
 	<AppSidebar spaces={data.spaces ?? []} notesBySpace={data.notesBySpace ?? {}} />
 	<Sidebar.Inset>
 		<header class="flex h-12 shrink-0 items-center gap-2 border-b px-4">
