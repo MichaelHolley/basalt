@@ -20,6 +20,7 @@
 				relatedItems={data.relatedItems}
 				allNotes={data.allNotes}
 				allTodos={data.allTodos}
+				spaceId={data.note.spaceId}
 			/>
 		</div>
 	</div>

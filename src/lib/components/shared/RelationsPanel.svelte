@@ -18,11 +18,14 @@
 		relatedItems: RelatedItem[];
 		allNotes: (typeof notes.$inferSelect)[];
 		allTodos: (typeof todos.$inferSelect)[];
+		spaceId?: string;
 	}
 
-	let { currentType, currentId, relatedItems, allNotes, allTodos }: Props = $props();
+	let { currentType, currentId, relatedItems, allNotes, allTodos, spaceId }: Props = $props();
 
 	let addingRelation = $state(false);
+	let addingTodo = $state(false);
+	let newTodoTitle = $state('');
 	let relationTargetType = $state<'note' | 'todo'>('note');
 	let relationTargetId = $state('');
 
@@ -32,24 +35,94 @@
 	let filteredTodos = $derived(
 		currentType === 'todo' ? allTodos.filter((t) => t.id !== currentId) : allTodos
 	);
+
+	function openAddRelation() {
+		addingTodo = false;
+		newTodoTitle = '';
+		addingRelation = !addingRelation;
+		relationTargetId = '';
+	}
+
+	function openAddTodo() {
+		addingRelation = false;
+		relationTargetId = '';
+		addingTodo = !addingTodo;
+		newTodoTitle = '';
+	}
 </script>
 
 <div class="flex flex-col gap-1">
 	<div class="mb-2 flex items-center justify-between">
 		<h2 class="text-xs font-medium tracking-wider text-muted-foreground uppercase">Relations</h2>
-		<Button
-			variant="ghost"
-			size="icon"
-			class="size-5"
-			onclick={() => {
-				addingRelation = !addingRelation;
-				relationTargetId = '';
-			}}
-			title="Add relation"
-		>
-			<Plus class="size-3" />
-		</Button>
+		<div class="flex items-center gap-0.5">
+			{#if spaceId}
+				<Button
+					variant="ghost"
+					size="icon"
+					class="size-5"
+					onclick={openAddTodo}
+					title="New linked todo"
+				>
+					<SquareCheckBig class="size-3" />
+				</Button>
+			{/if}
+			<Button
+				variant="ghost"
+				size="icon"
+				class="size-5"
+				onclick={openAddRelation}
+				title="Add relation"
+			>
+				<Plus class="size-3" />
+			</Button>
+		</div>
 	</div>
+
+	{#if addingTodo && spaceId}
+		<form
+			method="POST"
+			action="?/createLinkedTodo"
+			use:enhance={() =>
+				({ update }) => {
+					addingTodo = false;
+					newTodoTitle = '';
+					update({ invalidateAll: true });
+				}}
+			class="mb-2 flex flex-col gap-1.5"
+		>
+			<input type="hidden" name="noteId" value={currentId} />
+			<input type="hidden" name="spaceId" value={spaceId} />
+			<input
+				name="title"
+				type="text"
+				bind:value={newTodoTitle}
+				placeholder="Todo title…"
+				required
+				autofocus
+				onkeydown={(e) => {
+					if (e.key === 'Escape') {
+						addingTodo = false;
+						newTodoTitle = '';
+					}
+				}}
+				class="w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
+			/>
+			<div class="flex gap-1">
+				<Button type="submit" variant="ghost" size="icon" class="text-primary"
+					><Check class="size-4" /></Button
+				>
+				<Button
+					type="button"
+					variant="ghost"
+					size="icon"
+					onclick={() => {
+						addingTodo = false;
+						newTodoTitle = '';
+					}}><X class="size-4" /></Button
+				>
+			</div>
+		</form>
+	{/if}
 
 	{#if addingRelation}
 		<form
@@ -101,7 +174,7 @@
 		</form>
 	{/if}
 
-	{#if relatedItems.length === 0 && !addingRelation}
+	{#if relatedItems.length === 0 && !addingRelation && !addingTodo}
 		<p class="text-xs text-muted-foreground italic">No relations.</p>
 	{:else}
 		<ul class="flex flex-col gap-0.5">

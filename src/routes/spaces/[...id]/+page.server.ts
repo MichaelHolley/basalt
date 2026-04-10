@@ -150,6 +150,12 @@ const deleteRelationSchema = z.object({
 	id: z.string().min(1)
 });
 
+const createLinkedTodoSchema = z.object({
+	noteId: z.string().min(1),
+	spaceId: z.string().min(1),
+	title: z.string().min(1, 'Title is required')
+});
+
 // ── Actions ───────────────────────────────────────────────────────────────────
 
 export const actions: Actions = {
@@ -278,6 +284,29 @@ export const actions: Actions = {
 		if (!result.success) return fail(400, { error: result.error.issues[0].message });
 
 		deleteRelation(result.data.id);
+		return { success: true };
+	},
+
+	createLinkedTodo: async ({ request }) => {
+		const data = await request.formData();
+		const result = createLinkedTodoSchema.safeParse({
+			noteId: data.get('noteId'),
+			spaceId: data.get('spaceId'),
+			title: data.get('title')
+		});
+		if (!result.success) return fail(400, { error: result.error.issues[0].message });
+
+		const { noteId, spaceId, title } = result.data;
+
+		const note = getNote(noteId);
+		if (!note) return fail(404, { error: 'Note not found' });
+
+		try {
+			const todoId = createTodo(title, spaceId);
+			createRelation('note', noteId, 'todo', todoId);
+		} catch (e) {
+			return fail(400, { error: (e as Error).message });
+		}
 		return { success: true };
 	},
 
