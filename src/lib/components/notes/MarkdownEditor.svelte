@@ -7,23 +7,61 @@
 	interface Props {
 		value?: string;
 		readonly?: boolean;
+		noteId?: string;
 		onchange?: (markdown: string) => void;
 	}
 
-	let { value = '', readonly = false, onchange }: Props = $props();
+	let { value = '', readonly = false, noteId, onchange }: Props = $props();
 
 	let container: HTMLDivElement;
 	let crepe: Crepe;
 
+	function spaceId(): string {
+		if (!noteId) return '';
+		const parts = noteId.split('/');
+		return parts.slice(0, -1).join('/');
+	}
+
+	function proxyImageUrl(src: string): string {
+		const sid = spaceId();
+		if (sid && src.startsWith('assets/')) return `/api/images/${sid}/${src}`;
+		return src;
+	}
+
+	function toRelativePaths(markdown: string): string {
+		const sid = spaceId();
+		if (!sid) return markdown;
+		return markdown.split(`/api/images/${sid}/assets/`).join('assets/');
+	}
+
 	onMount(async () => {
 		crepe = new Crepe({
 			root: container,
-			defaultValue: value
+			defaultValue: value,
+			featureConfigs: noteId
+				? {
+						[Crepe.Feature.ImageBlock]: {
+							onUpload: async (file: File) => {
+								const formData = new FormData();
+								formData.append('file', file);
+								formData.append('noteId', noteId!);
+								const res = await fetch('/api/images/upload', {
+									method: 'POST',
+									body: formData
+								});
+								if (!res.ok) throw new Error('Upload failed');
+								const { url } = (await res.json()) as { url: string };
+								return url;
+							},
+							proxyDomURL: (src: string) => proxyImageUrl(src)
+						}
+					}
+				: undefined
 		});
 
 		crepe.on((listener) => {
 			listener.markdownUpdated((_ctx, markdown) => {
-				onchange?.(markdown);
+				onchange?.(toRelativePaths(markdown));
 			});
 		});
 

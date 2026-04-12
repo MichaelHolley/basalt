@@ -130,7 +130,7 @@
 	</div>
 	<div class="min-h-0 flex-1">
 		{#key note.id}
-			<MilkdownEditor value={content} onchange={handleContentChange} />
+			<MilkdownEditor value={content} noteId={note.id} onchange={handleContentChange} />
 		{/key}
 	</div>
 </div>
