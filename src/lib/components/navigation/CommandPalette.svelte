@@ -1,11 +1,12 @@
 <script lang="ts">
-	import * as Command from '$lib/components/ui/command';
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { FileText, ListTodo, FolderPlus, ArrowLeft } from '@lucide/svelte';
-	import { Debounced, watch } from 'runed';
+	import * as Command from '$lib/components/ui/command';
 	import type { SpaceNode } from '$lib/server/db/utils';
+	import { ArrowLeft, FileText, FolderPlus, ListTodo } from '@lucide/svelte';
+	import { Debounced, watch } from 'runed';
+	import { SvelteMap } from 'svelte/reactivity';
 
 	// ── Types ──────────────────────────────────────────────────────────────────
 	type CreateAction = 'note' | 'todo' | 'space';
@@ -45,7 +46,7 @@
 	});
 
 	let spaceNameMap = $derived.by(() => {
-		const map = new Map<string, string>();
+		const map = new SvelteMap<string, string>();
 		function flatten(nodes: SpaceNode[]) {
 			for (const n of nodes) {
 				map.set(n.id, n.name);
