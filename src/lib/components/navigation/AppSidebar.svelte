@@ -3,7 +3,7 @@
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
-	import { House, Settings, Plus, Check, X, Search, FileText } from '@lucide/svelte';
+	import { House, Settings, FolderPlus, Check, X, Search, FileText } from '@lucide/svelte';
 	import SpaceTree from '$lib/components/navigation/SpaceTree.svelte';
 	import type { SpaceNode, Note } from '$lib/server/db/utils';
 	import { Debounced, watch } from 'runed';
@@ -125,7 +125,7 @@
 			<Sidebar.GroupLabel class="flex items-center justify-between pr-1">
 				Spaces
 				<Button variant="ghost" size="icon" class="size-5" onclick={startAdd} title="New space">
-					<Plus class="size-3" />
+					<FolderPlus class="size-3" />
 				</Button>
 			</Sidebar.GroupLabel>
 			<Sidebar.GroupContent>

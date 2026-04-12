@@ -4,7 +4,7 @@
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
-	import { Folder, FolderOpen, FileText, Plus, Trash2, Check, X } from '@lucide/svelte';
+	import { Folder, FolderOpen, FolderPlus, FileText, Trash2, Check, X } from '@lucide/svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import type { SpaceNode, Note } from '$lib/server/db/utils';
 	import SpaceTree from '$lib/components/navigation/SpaceTree.svelte';
@@ -85,7 +85,7 @@
 					onclick={() => startAddChild(space.id)}
 					title="Add subspace"
 				>
-					<Plus class="size-3" />
+					<FolderPlus class="size-3" />
 				</Button>
 				<form
 					method="POST"
