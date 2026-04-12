@@ -7,6 +7,7 @@
 	import AppSidebar from '$lib/components/navigation/AppSidebar.svelte';
 	import CommandPalette from '$lib/components/navigation/CommandPalette.svelte';
 	import { page } from '$app/stores';
+	import { appStore } from '@/stores/app.svelte';
 
 	import type { Snippet } from 'svelte';
 	import type { LayoutData } from './$types';
@@ -64,6 +65,10 @@
 		});
 	});
 
+	$effect(() => {
+		appStore.set(data.spaces ?? [], data.notesBySpace ?? {});
+	});
+
 	let pageTitle = $derived.by(() => {
 		const segs = breadcrumbSegments();
 		if (segs.length === 0) return 'Basalt';
@@ -78,8 +83,8 @@
 </svelte:head>
 
 <Sidebar.Provider>
-	<CommandPalette spaces={data.spaces ?? []} />
-	<AppSidebar spaces={data.spaces ?? []} notesBySpace={data.notesBySpace ?? {}} />
+	<CommandPalette />
+	<AppSidebar />
 	<Sidebar.Inset>
 		<header class="flex h-12 shrink-0 items-center gap-2 border-b px-4">
 			<Sidebar.Trigger class="-ml-1" />

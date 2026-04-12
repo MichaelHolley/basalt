@@ -234,7 +234,6 @@
 							bind:value={newTodoTitle}
 							placeholder="Todo title…"
 							required
-							autofocus
 							onkeydown={(e) => {
 								if (e.key === 'Escape') {
 									addingTodo = false;

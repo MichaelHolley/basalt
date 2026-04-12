@@ -5,15 +5,8 @@
 	import { Button } from '$lib/components/ui/button';
 	import { House, Settings, FolderPlus, Check, X, Search, FileText } from '@lucide/svelte';
 	import SpaceTree from '$lib/components/navigation/SpaceTree.svelte';
-	import type { SpaceNode, Note } from '$lib/server/db/utils';
+	import { appStore } from '@/stores/app.svelte';
 	import { Debounced, watch } from 'runed';
-
-	interface Props {
-		spaces?: SpaceNode[];
-		notesBySpace?: Record<string, Note[]>;
-	}
-
-	let { spaces = [], notesBySpace = {} }: Props = $props();
 
 	let addingSpace = $state(false);
 	let newSpaceName = $state('');
@@ -165,7 +158,7 @@
 							</form>
 						</Sidebar.MenuItem>
 					{/if}
-					<SpaceTree {spaces} {notesBySpace} />
+					<SpaceTree spaces={appStore.spaces} />
 				</Sidebar.Menu>
 			</Sidebar.GroupContent>
 		</Sidebar.Group>

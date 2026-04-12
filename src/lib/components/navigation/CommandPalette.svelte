@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
 	import * as Command from '$lib/components/ui/command';
 	import type { SpaceNode } from '$lib/server/db/utils';
+	import { appStore } from '@/stores/app.svelte';
 	import { ArrowLeft, FileText, FolderPlus, ListTodo } from '@lucide/svelte';
 	import { Debounced, watch } from 'runed';
 	import { SvelteMap } from 'svelte/reactivity';
@@ -16,9 +16,6 @@
 		label: string;
 		icon: typeof FileText;
 	}
-
-	// ── Props ──────────────────────────────────────────────────────────────────
-	let { spaces = [] }: { spaces: SpaceNode[] } = $props();
 
 	// ── State ──────────────────────────────────────────────────────────────────
 	let open = $state(false);
@@ -37,14 +34,6 @@
 	];
 
 	// ── Derived ────────────────────────────────────────────────────────────────
-	let activeSpaceId = $derived.by(() => {
-		const pd = $page.data as Record<string, unknown>;
-		if (pd.type === 'space') return (pd.space as { id: string } | undefined)?.id ?? null;
-		if (pd.type === 'note') return (pd.note as { spaceId: string } | undefined)?.spaceId ?? null;
-		if (pd.type === 'todo') return (pd.todo as { spaceId: string } | undefined)?.spaceId ?? null;
-		return null;
-	});
-
 	let spaceNameMap = $derived.by(() => {
 		const map = new SvelteMap<string, string>();
 		function flatten(nodes: SpaceNode[]) {
@@ -53,12 +42,14 @@
 				flatten(n.children);
 			}
 		}
-		flatten(spaces);
+		flatten(appStore.spaces);
 		return map;
 	});
 
 	let activeSpaceName = $derived(
-		activeSpaceId ? (spaceNameMap.get(activeSpaceId) ?? activeSpaceId) : null
+		appStore.activeSpaceId
+			? (spaceNameMap.get(appStore.activeSpaceId) ?? appStore.activeSpaceId)
+			: null
 	);
 
 	let visibleCreateCommands = $derived(
@@ -130,7 +121,7 @@
 
 	function submitCreate() {
 		if (!nameValue.trim()) return;
-		if (createMode !== 'space' && !activeSpaceId) return;
+		if (createMode !== 'space' && !appStore.activeSpaceId) return;
 		createFormEl?.requestSubmit();
 	}
 
@@ -162,8 +153,8 @@
 						}
 					}}
 			>
-				{#if activeSpaceId}
-					<input type="hidden" name="parentId" value={activeSpaceId} />
+				{#if appStore.activeSpaceId}
+					<input type="hidden" name="parentId" value={appStore.activeSpaceId} />
 				{/if}
 				<input type="hidden" name="name" value={nameValue} />
 			</form>
@@ -179,7 +170,7 @@
 						return update({ invalidateAll: true });
 					}}
 			>
-				<input type="hidden" name="spaceId" value={activeSpaceId ?? ''} />
+				<input type="hidden" name="spaceId" value={appStore.activeSpaceId ?? ''} />
 				<input type="hidden" name="title" value={nameValue} />
 			</form>
 		{/if}
@@ -204,7 +195,7 @@
 			{:else if activeSpaceName}
 				<span
 					class="rounded-sm bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
-					title={activeSpaceId ?? ''}
+					title={appStore.activeSpaceId ?? ''}
 				>
 					{activeSpaceName}
 				</span>
@@ -224,7 +215,7 @@
 		</div>
 
 		<div class="px-3 py-4 text-center text-xs text-muted-foreground">
-			{#if createMode === 'space' || activeSpaceId}
+			{#if createMode === 'space' || appStore.activeSpaceId}
 				Press <kbd class="rounded border px-1 py-0.5 font-mono text-xs">Enter</kbd> to create ·
 				<kbd class="rounded border px-1 py-0.5 font-mono text-xs">Esc</kbd> to go back
 			{:else}

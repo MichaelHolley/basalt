@@ -6,16 +6,16 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Folder, FolderOpen, FolderPlus, FileText, Trash2, Check, X } from '@lucide/svelte';
 	import { SvelteSet } from 'svelte/reactivity';
-	import type { SpaceNode, Note } from '$lib/server/db/utils';
+	import type { SpaceNode } from '$lib/server/db/utils';
 	import SpaceTree from '$lib/components/navigation/SpaceTree.svelte';
+	import { appStore } from '@/stores/app.svelte';
 
 	interface Props {
 		spaces: SpaceNode[];
-		notesBySpace?: Record<string, Note[]>;
 		depth?: number;
 	}
 
-	let { spaces, notesBySpace = {}, depth = 0 }: Props = $props();
+	let { spaces, depth = 0 }: Props = $props();
 
 	let collapsedSpaces = new SvelteSet<string>();
 	let addingChildOf = $state<string | null>(null);
@@ -43,7 +43,7 @@
 </script>
 
 {#each spaces as space (space.id)}
-	{@const spaceNotes = notesBySpace[space.id] ?? []}
+	{@const spaceNotes = appStore.notesBySpace[space.id] ?? []}
 	{@const hasChildren =
 		space.children.length > 0 || spaceNotes.length > 0 || addingChildOf === space.id}
 	<Sidebar.MenuItem>
@@ -167,7 +167,7 @@
 					{/if}
 
 					{#if space.children.length > 0}
-						<SpaceTree spaces={space.children} {notesBySpace} depth={depth + 1} />
+						<SpaceTree spaces={space.children} depth={depth + 1} />
 					{/if}
 				</Sidebar.MenuSub>
 			</div>
