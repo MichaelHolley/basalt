@@ -140,8 +140,7 @@
 										update({ invalidateAll: true });
 									};
 								}}
-								class="flex items-center gap-1 px-2 py-1"
-								style="padding-left: {(depth + 1) * 12 + 8}px"
+								class="flex items-center gap-1 py-1 pl-2"
 							>
 								<input type="hidden" name="parentId" value={space.id} />
 								<Input
