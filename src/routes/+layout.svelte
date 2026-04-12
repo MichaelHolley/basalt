@@ -1,28 +1,18 @@
 <script lang="ts">
-	import './layout.css';
+	import { page } from '$app/stores';
 	import favicon from '$lib/assets/favicon.svg';
-	import { SvelteMap } from 'svelte/reactivity';
-	import * as Sidebar from '$lib/components/ui/sidebar';
-	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
 	import AppSidebar from '$lib/components/navigation/AppSidebar.svelte';
 	import CommandPalette from '$lib/components/navigation/CommandPalette.svelte';
-	import { page } from '$app/stores';
+	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
+	import * as Sidebar from '$lib/components/ui/sidebar';
 	import { appStore } from '@/stores/app.svelte';
+	import './layout.css';
 
+	import { flattenSpaces } from '@/components/spaces/util';
 	import type { Snippet } from 'svelte';
 	import type { LayoutData } from './$types';
-	import type { SpaceNode } from '$lib/server/db/utils';
 
 	let { children, data }: { children: Snippet; data: LayoutData } = $props();
-
-	// Flatten the space tree into a id → name map for breadcrumb label resolution
-	function flattenSpaces(nodes: SpaceNode[], map: SvelteMap<string, string> = new SvelteMap()) {
-		for (const node of nodes) {
-			map.set(node.id, node.name);
-			flattenSpaces(node.children, map);
-		}
-		return map;
-	}
 
 	let spaceNameMap = $derived(flattenSpaces(data.spaces ?? []));
 
