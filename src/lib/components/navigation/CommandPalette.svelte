@@ -233,10 +233,7 @@
 			{#if results.length > 0}
 				<Command.Group heading="Notes">
 					{#each results as result (result.note_id)}
-						<Command.LinkItem
-							href="/spaces/{result.note_id.replace(/\.md$/, '')}"
-							onclick={() => (open = false)}
-						>
+						<Command.LinkItem href="/spaces/{result.note_id}" onclick={() => (open = false)}>
 							<FileText class="mt-0.5 shrink-0 self-start" />
 							<div class="flex min-w-0 flex-col">
 								<span class="truncate">{result.title}</span>

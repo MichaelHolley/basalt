@@ -120,7 +120,7 @@
 						<Sidebar.MenuSubItem>
 							<Sidebar.MenuSubButton>
 								{#snippet child({ props })}
-									<a href="/spaces/{note.id.replace(/\.md$/, '')}" {...props}>
+									<a href="/spaces/{note.id}" {...props}>
 										<FileText class="size-3.5 shrink-0" />
 										<span class="truncate">{note.title}</span>
 									</a>

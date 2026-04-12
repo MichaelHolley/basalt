@@ -38,6 +38,28 @@ import type { PageServerLoad, Actions } from './$types';
 export const load: PageServerLoad = async ({ params }) => {
 	const config = getConfig();
 
+	// Check if this path is a note (explicit .md suffix)
+	if (params.id.endsWith('.md')) {
+		const note = getNote(params.id);
+		if (note) {
+			const filePath = path.join(config.vaultPath, ...note.id.split('/'));
+			const content = fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf-8') : '';
+			const noteRelations = getRelationsForItem('note', note.id);
+			const relatedItems = resolveRelatedItems(noteRelations, 'note', note.id);
+			const rootSpace = note.spaceId.split('/')[0];
+
+			return {
+				type: 'note' as const,
+				note,
+				content,
+				relatedItems,
+				allNotes: getNotesByRootSpace(rootSpace),
+				allTodos: getTodosByRootSpace(rootSpace)
+			};
+		}
+		error(404, 'Not found');
+	}
+
 	// Check if this path is a space
 	const space = getSpace(params.id);
 	if (space) {
@@ -49,24 +71,10 @@ export const load: PageServerLoad = async ({ params }) => {
 		};
 	}
 
-	// Check if this path is a note (append .md)
-	const noteId = `${params.id}.md`;
-	const note = getNote(noteId);
-	if (note) {
-		const filePath = path.join(config.vaultPath, ...note.id.split('/'));
-		const content = fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf-8') : '';
-		const noteRelations = getRelationsForItem('note', note.id);
-		const relatedItems = resolveRelatedItems(noteRelations, 'note', note.id);
-		const rootSpace = note.spaceId.split('/')[0];
-
-		return {
-			type: 'note' as const,
-			note,
-			content,
-			relatedItems,
-			allNotes: getNotesByRootSpace(rootSpace),
-			allTodos: getTodosByRootSpace(rootSpace)
-		};
+	// Redirect stale bookmarks: bare path with no space but a note exists → redirect to .md URL
+	const bareNote = getNote(`${params.id}.md`);
+	if (bareNote) {
+		redirect(301, `/spaces/${params.id}.md`);
 	}
 
 	// Check if the last segment is a todo nanoid
@@ -179,7 +187,7 @@ export const actions: Actions = {
 			return fail(400, { error: (e as Error).message });
 		}
 
-		redirect(302, `/spaces/${newId.replace(/\.md$/, '')}`);
+		redirect(302, `/spaces/${newId}`);
 	},
 
 	deleteNote: async ({ request }) => {

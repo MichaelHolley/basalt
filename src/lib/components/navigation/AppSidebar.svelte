@@ -91,7 +91,7 @@
 					{#each searchResults as result (result.note_id)}
 						<li>
 							<a
-								href="/spaces/{result.note_id.replace(/\.md$/, '')}"
+								href="/spaces/{result.note_id}"
 								onclick={clearSearch}
 								class="flex flex-col gap-0.5 px-2 py-1.5 hover:bg-accent"
 							>

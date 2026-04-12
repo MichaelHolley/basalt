@@ -63,7 +63,7 @@
 			<ul class="flex flex-col gap-0.5">
 				{#each data.recentNotes as note (note.id)}
 					{@const spaceName = spaceNameMap.get(note.spaceId) ?? note.spaceId}
-					{@const href = `/spaces/${note.id.replace(/\.md$/, '')}`}
+					{@const href = `/spaces/${note.id}`}
 					<li>
 						<a
 							{href}

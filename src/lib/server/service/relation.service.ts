@@ -43,7 +43,7 @@ export function resolveRelatedItems(
 							type: 'note' as const,
 							id: related.id,
 							title: related.title,
-							href: `/spaces/${related.id.replace(/\.md$/, '')}`
+							href: `/spaces/${related.id}`
 						}
 					: null;
 			} else {

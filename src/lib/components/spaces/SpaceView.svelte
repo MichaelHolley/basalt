@@ -212,7 +212,7 @@
 				{#each notes as note (note.id)}
 					<li>
 						<a
-							href="/spaces/{note.id.replace(/\.md$/, '')}"
+							href="/spaces/{note.id}"
 							class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent"
 						>
 							<FileText class="size-4 shrink-0 text-muted-foreground" />

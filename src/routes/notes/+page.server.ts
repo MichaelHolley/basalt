@@ -32,6 +32,6 @@ export const actions: Actions = {
 			return fail(400, { error: (e as Error).message });
 		}
 
-		redirect(302, `/spaces/${id.replace(/\.md$/, '')}`);
+		redirect(302, `/spaces/${id}`);
 	}
 };
