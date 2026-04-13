@@ -240,7 +240,7 @@
 					onclick={() => (linkToNote = !linkToNote)}
 					title="Toggle note link (Tab)"
 				>
-					{linkToNote ? 'linked to note' : (activeSpaceName ?? 'space')}
+					{linkToNote ? (appStore.activeNoteTitle ?? 'note') : (activeSpaceName ?? 'space')}
 				</button>
 			{:else if activeSpaceName}
 				<span

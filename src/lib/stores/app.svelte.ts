@@ -19,6 +19,12 @@ class AppStore {
 		return null;
 	});
 
+	activeNoteTitle = $derived.by<string | null>(() => {
+		const pd = page.data as Record<string, unknown>;
+		if (pd.type === 'note') return (pd.note as { title: string } | undefined)?.title ?? null;
+		return null;
+	});
+
 	set(spaces: SpaceNode[], notesBySpace: Record<string, Note[]>) {
 		this.spaces = spaces;
 		this.notesBySpace = notesBySpace;
