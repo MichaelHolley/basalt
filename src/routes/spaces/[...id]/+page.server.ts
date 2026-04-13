@@ -1,13 +1,12 @@
 import { fail, error, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
-import fs from 'fs';
-import path from 'path';
 import { getConfig } from '$lib/server/config';
 import { buildTodoTree } from '$lib/server/db/tree';
 import type { TodoWithDepth } from '$lib/server/db/tree';
 import { getSpace } from '$lib/server/service/space.service';
 import {
 	getNote,
+	getNoteContent,
 	getNotesBySpace,
 	getNotesByRootSpace,
 	renameNote,
@@ -31,7 +30,8 @@ import {
 	getRelationsForItem,
 	resolveRelatedItems,
 	createRelation,
-	deleteRelation
+	deleteRelation,
+	createLinkedTodo
 } from '$lib/server/service/relation.service';
 import type { PageServerLoad, Actions } from './$types';
 
@@ -42,8 +42,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	if (params.id.endsWith('.md')) {
 		const note = getNote(params.id);
 		if (note) {
-			const filePath = path.join(config.vaultPath, ...note.id.split('/'));
-			const content = fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf-8') : '';
+			const content = getNoteContent(note.id, config.vaultPath);
 			const noteRelations = getRelationsForItem('note', note.id);
 			const relatedItems = resolveRelatedItems(noteRelations, 'note', note.id);
 			const rootSpace = note.spaceId.split('/')[0];
@@ -281,10 +280,6 @@ export const actions: Actions = {
 
 		const { currentType, currentId, targetType, targetId } = result.data;
 
-		if (currentType === 'todo' && targetType === 'todo') {
-			return fail(400, { error: 'Cannot create a relation between two todos' });
-		}
-
 		try {
 			createRelation(currentType, currentId, targetType, targetId);
 		} catch (e) {
@@ -311,14 +306,8 @@ export const actions: Actions = {
 		});
 		if (!result.success) return fail(400, { error: result.error.issues[0].message });
 
-		const { noteId, spaceId, title } = result.data;
-
-		const note = getNote(noteId);
-		if (!note) return fail(404, { error: 'Note not found' });
-
 		try {
-			const todoId = createTodo(title, spaceId);
-			createRelation('note', noteId, 'todo', todoId);
+			createLinkedTodo(result.data.noteId, result.data.spaceId, result.data.title);
 		} catch (e) {
 			return fail(400, { error: (e as Error).message });
 		}

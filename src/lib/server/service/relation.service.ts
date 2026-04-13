@@ -3,6 +3,8 @@ import { nanoid } from 'nanoid';
 import { db } from '$lib/server/db';
 import { relations, notes, todos } from '$lib/server/db/schema';
 import { normalizeRelation } from '$lib/server/db/utils';
+import { getNote } from '$lib/server/service/note.service';
+import { createTodo } from '$lib/server/service/todo.service';
 
 export type RelatedItem = {
 	relationId: string;
@@ -109,4 +111,11 @@ export function createRelation(
 
 export function deleteRelation(id: string): void {
 	db.delete(relations).where(eq(relations.id, id)).run();
+}
+
+export function createLinkedTodo(noteId: string, spaceId: string, title: string): void {
+	const note = getNote(noteId);
+	if (!note) throw new Error('Note not found');
+	const todoId = createTodo(title, spaceId);
+	createRelation('note', noteId, 'todo', todoId);
 }

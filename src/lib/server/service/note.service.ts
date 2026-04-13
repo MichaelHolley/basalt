@@ -99,6 +99,11 @@ export function deleteNote(id: string, vaultPath: string): string {
 	return note.spaceId;
 }
 
+export function getNoteContent(id: string, vaultPath: string): string {
+	const filePath = path.join(vaultPath, ...id.split('/'));
+	return fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf-8') : '';
+}
+
 export function getRecentNotes(limit: number) {
 	return db.select().from(notes).orderBy(desc(notes.updatedAt)).limit(limit).all();
 }
