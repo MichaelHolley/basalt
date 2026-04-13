@@ -23,6 +23,7 @@
 	let results = $state<{ note_id: string; title: string; snippet: string }[]>([]);
 	let createMode = $state<CreateAction | null>(null);
 	let nameValue = $state('');
+	let linkToNote = $state(false);
 	let nameInputEl = $state<HTMLInputElement | null>(null);
 	let createFormEl = $state<HTMLFormElement | null>(null);
 	const debouncedQuery = new Debounced(() => query, 200);
@@ -65,6 +66,7 @@
 			results = [];
 			createMode = null;
 			nameValue = '';
+			linkToNote = false;
 		}
 	});
 
@@ -88,6 +90,7 @@
 				e.preventDefault();
 				createMode = null;
 				nameValue = '';
+				linkToNote = false;
 			}
 		}
 		window.addEventListener('keydown', captureEsc, true);
@@ -117,6 +120,7 @@
 		createMode = action;
 		query = '';
 		nameValue = '';
+		linkToNote = action === 'todo' && appStore.activeNoteId !== null;
 	}
 
 	function submitCreate() {
@@ -158,11 +162,11 @@
 				{/if}
 				<input type="hidden" name="name" value={nameValue} />
 			</form>
-		{:else}
+		{:else if createMode === 'note'}
 			<form
 				bind:this={createFormEl}
 				method="POST"
-				action={createMode === 'note' ? '/notes?/create' : '/todos?/create'}
+				action="/notes?/create"
 				use:enhance={() =>
 					({ update }) => {
 						open = false;
@@ -173,6 +177,40 @@
 				<input type="hidden" name="spaceId" value={appStore.activeSpaceId ?? ''} />
 				<input type="hidden" name="title" value={nameValue} />
 			</form>
+		{:else}
+			<!-- todo: linked to note or space-only -->
+			{#if linkToNote && appStore.activeNoteId}
+				<form
+					bind:this={createFormEl}
+					method="POST"
+					action="/spaces/{appStore.activeNoteId}?/createLinkedTodo"
+					use:enhance={() =>
+						({ update }) => {
+							open = false;
+							nameValue = '';
+							return update({ invalidateAll: true });
+						}}
+				>
+					<input type="hidden" name="noteId" value={appStore.activeNoteId} />
+					<input type="hidden" name="spaceId" value={appStore.activeSpaceId ?? ''} />
+					<input type="hidden" name="title" value={nameValue} />
+				</form>
+			{:else}
+				<form
+					bind:this={createFormEl}
+					method="POST"
+					action="/todos?/create"
+					use:enhance={() =>
+						({ update }) => {
+							open = false;
+							nameValue = '';
+							return update({ invalidateAll: true });
+						}}
+				>
+					<input type="hidden" name="spaceId" value={appStore.activeSpaceId ?? ''} />
+					<input type="hidden" name="title" value={nameValue} />
+				</form>
+			{/if}
 		{/if}
 
 		<div class="flex items-center gap-2 border-b p-1 pb-1">
@@ -182,6 +220,7 @@
 				onclick={() => {
 					createMode = null;
 					nameValue = '';
+					linkToNote = false;
 				}}
 				aria-label="Back to search"
 			>
@@ -192,6 +231,17 @@
 				<span class="rounded-sm bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
 					{activeSpaceName ?? 'root'}
 				</span>
+			{:else if createMode === 'todo' && appStore.activeNoteId}
+				<button
+					type="button"
+					class="rounded-sm px-1.5 py-0.5 text-xs transition-colors {linkToNote
+						? 'bg-primary/15 text-primary ring-1 ring-primary/30'
+						: 'bg-muted text-muted-foreground hover:bg-muted/80'}"
+					onclick={() => (linkToNote = !linkToNote)}
+					title="Toggle note link (Tab)"
+				>
+					{linkToNote ? 'linked to note' : (activeSpaceName ?? 'space')}
+				</button>
 			{:else if activeSpaceName}
 				<span
 					class="rounded-sm bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
@@ -206,7 +256,10 @@
 				class="h-8 flex-1 bg-transparent text-sm outline-hidden placeholder:text-muted-foreground"
 				placeholder="Enter name…"
 				onkeydown={(e) => {
-					if (e.key === 'Enter') {
+					if (e.key === 'Tab' && createMode === 'todo' && appStore.activeNoteId) {
+						e.preventDefault();
+						linkToNote = !linkToNote;
+					} else if (e.key === 'Enter') {
 						e.preventDefault();
 						submitCreate();
 					}
@@ -216,8 +269,11 @@
 
 		<div class="px-3 py-4 text-center text-xs text-muted-foreground">
 			{#if createMode === 'space' || appStore.activeSpaceId}
-				Press <kbd class="rounded border px-1 py-0.5 font-mono text-xs">Enter</kbd> to create ·
-				<kbd class="rounded border px-1 py-0.5 font-mono text-xs">Esc</kbd> to go back
+				Press <kbd class="rounded border px-1 py-0.5 font-mono text-xs">Enter</kbd> to create
+				{#if createMode === 'todo' && appStore.activeNoteId}
+					· <kbd class="rounded border px-1 py-0.5 font-mono text-xs">Tab</kbd> to toggle link
+				{/if}
+				· <kbd class="rounded border px-1 py-0.5 font-mono text-xs">Esc</kbd> to go back
 			{:else}
 				<span class="text-amber-500">No active space — navigate to a space first</span>
 				·
