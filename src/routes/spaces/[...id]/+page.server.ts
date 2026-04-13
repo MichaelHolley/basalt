@@ -1,8 +1,8 @@
 import { fail, error, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
 import { getConfig } from '$lib/server/config';
-import { buildTodoTree } from '$lib/server/db/tree';
-import type { TodoWithDepth } from '$lib/server/db/tree';
+import { buildTodoTree } from '$lib/server/utils/tree';
+import type { TodoWithDepth } from '$lib/server/db/types';
 import { getSpace } from '$lib/server/service/space.service';
 import {
 	getNote,

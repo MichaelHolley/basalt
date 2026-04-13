@@ -3,7 +3,7 @@
 	import CreateNoteForm from '@/components/notes/CreateNoteForm.svelte';
 	import CreateSpaceForm from '@/components/spaces/CreateSpaceForm.svelte';
 	import CreateTodoForm from '@/components/todos/CreateTodoForm.svelte';
-	import type { SpaceNode } from '$lib/server/db/tree';
+	import type { SpaceNode } from '$lib/server/db/types';
 	import { appStore } from '@/stores/app.svelte';
 	import { FileText, FolderPlus, ListTodo } from '@lucide/svelte';
 	import { Debounced, watch } from 'runed';

@@ -3,7 +3,7 @@
 	import { FileText, SquareCheckBig } from '@lucide/svelte';
 	import { cn } from '$lib/utils';
 	import type { PageData } from './$types';
-	import type { SpaceNode } from '$lib/server/db/tree';
+	import type { SpaceNode } from '$lib/server/db/types';
 
 	// ── Props ──────────────────────────────────────────────────────────────────
 	let { data }: { data: PageData } = $props();

@@ -1,4 +1,4 @@
-import type { SpaceNode } from '@/server/db/tree';
+import type { SpaceNode } from '@/server/db/types';
 import { SvelteMap } from 'svelte/reactivity';
 
 /**

@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import TodoItem from '$lib/components/todos/TodoItem.svelte';
 	import { Button } from '$lib/components/ui/button';
-	import type { TodoWithDepth } from '$lib/server/db/tree';
+	import type { TodoWithDepth } from '$lib/server/db/types';
 	import { Trash2 } from '@lucide/svelte';
 
 	interface Props {

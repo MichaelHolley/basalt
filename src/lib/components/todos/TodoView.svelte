@@ -6,7 +6,7 @@
 	import TodoTitleForm from '$lib/components/todos/TodoTitleForm.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import type { todos } from '$lib/server/db/schema';
-	import type { Todo, TodoWithDepth } from '$lib/server/db/tree';
+	import type { Todo, TodoWithDepth } from '$lib/server/db/types';
 	import { Plus } from '@lucide/svelte';
 
 	interface Props {

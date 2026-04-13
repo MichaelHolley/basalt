@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { SpaceNode } from '$lib/server/db/tree';
+	import type { SpaceNode } from '$lib/server/db/types';
 	import SpaceTreeNode from '$lib/components/navigation/SpaceTreeNode.svelte';
 	import { appStore } from '@/stores/app.svelte';
 

@@ -4,7 +4,7 @@
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import { Button } from '$lib/components/ui/button';
 	import { Folder, FolderOpen, FolderPlus, FileText, Trash2 } from '@lucide/svelte';
-	import type { SpaceNode, Note } from '$lib/server/db/tree';
+	import type { SpaceNode, Note } from '$lib/server/db/types';
 	import CreateChildSpaceForm from '$lib/components/navigation/CreateChildSpaceForm.svelte';
 	import SpaceTree from '$lib/components/navigation/SpaceTree.svelte';
 
