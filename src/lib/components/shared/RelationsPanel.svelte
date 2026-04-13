@@ -81,7 +81,7 @@
 
 	{#if currentType === 'note'}
 		<Tabs.Root value="notes" class="w-full">
-			<Tabs.List class="w-full">
+			<Tabs.List class="w-full" variant="line">
 				<Tabs.Trigger value="notes" class="flex-1 text-xs">
 					Notes{relatedNotes.length > 0 ? ` (${relatedNotes.length})` : ''}
 				</Tabs.Trigger>
