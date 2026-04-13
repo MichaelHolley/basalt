@@ -1,12 +1,13 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import CreateChildTodoForm from '$lib/components/todos/CreateChildTodoForm.svelte';
+	import TodoChildList from '$lib/components/todos/TodoChildList.svelte';
+	import TodoDueDatePicker from '$lib/components/todos/TodoDueDatePicker.svelte';
 	import TodoItem from '$lib/components/todos/TodoItem.svelte';
+	import TodoTitleForm from '$lib/components/todos/TodoTitleForm.svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { Checkbox } from '$lib/components/ui/checkbox';
-	import { Input } from '$lib/components/ui/input';
 	import type { todos } from '$lib/server/db/schema';
 	import type { Todo, TodoWithDepth } from '$lib/server/db/utils';
-	import { Calendar, Check, Pencil, Plus, Trash2, X } from '@lucide/svelte';
+	import { Plus } from '@lucide/svelte';
 
 	interface Props {
 		todo: typeof todos.$inferSelect;
@@ -18,161 +19,16 @@
 
 	let { todo, parent, children, depth, maxDepth }: Props = $props();
 
-	let editing = $state(false);
-	let editTitle = $state('');
-	let titleInput = $state<HTMLInputElement | null>(null);
-	let toggleForm = $state<HTMLFormElement | null>(null);
-	let isDone = $state(false);
 	let addingChild = $state(false);
-	let newChildTitle = $state('');
-	let childInput = $state<HTMLInputElement | null>(null);
-	let childError = $state('');
 
 	let atMaxDepth = $derived(depth >= maxDepth);
-
-	$effect(() => {
-		isDone = todo.status === 'done';
-	});
-	$effect(() => {
-		if (editing) titleInput?.focus();
-	});
-	$effect(() => {
-		if (addingChild) childInput?.focus();
-	});
-
-	function startEdit() {
-		editing = true;
-		editTitle = todo.title;
-	}
-
-	function cancelEdit() {
-		editing = false;
-	}
 </script>
 
 <div class="flex max-w-2xl flex-1 flex-col gap-6 overflow-y-auto p-4">
-	<!-- Title + actions -->
-	<div class="flex items-start gap-3">
-		<form
-			bind:this={toggleForm}
-			method="POST"
-			action="?/toggle"
-			use:enhance={() =>
-				({ update }) =>
-					update({ invalidateAll: true })}
-			class="mt-1"
-		>
-			<input type="hidden" name="id" value={todo.id} />
-			<Checkbox
-				checked={isDone}
-				onCheckedChange={(v) => {
-					isDone = !!v;
-					toggleForm?.requestSubmit();
-				}}
-			/>
-		</form>
+	<TodoTitleForm {todo} />
 
-		{#if editing}
-			<form
-				method="POST"
-				action="?/renameTodo"
-				use:enhance={() =>
-					({ update }) => {
-						editing = false;
-						update({ invalidateAll: true });
-					}}
-				class="flex flex-1 items-center gap-2"
-			>
-				<input type="hidden" name="id" value={todo.id} />
-				<Input name="title" bind:value={editTitle} bind:ref={titleInput} class="flex-1" />
-				<Button type="submit" variant="ghost" size="icon" class="text-primary"
-					><Check class="size-4" /></Button
-				>
-				<Button type="button" variant="ghost" size="icon" onclick={cancelEdit}
-					><X class="size-4" /></Button
-				>
-			</form>
-		{:else}
-			<h1
-				class="flex-1 text-base font-semibold {isDone ? 'text-muted-foreground line-through' : ''}"
-			>
-				{todo.title}
-			</h1>
-			<Button
-				variant="ghost"
-				size="icon"
-				class="size-7 shrink-0"
-				onclick={startEdit}
-				title="Rename"
-			>
-				<Pencil class="size-3.5" />
-			</Button>
-			<form
-				method="POST"
-				action="?/deleteTodo"
-				use:enhance={() =>
-					({ update }) =>
-						update({ invalidateAll: true })}
-				class="contents"
-			>
-				<input type="hidden" name="id" value={todo.id} />
-				<Button
-					type="submit"
-					variant="ghost"
-					size="icon"
-					class="size-7 shrink-0 hover:text-destructive"
-					title="Delete todo"
-					onclick={(e) => {
-						if (!confirm(`Delete "${todo.title}"?`)) e.preventDefault();
-					}}
-				>
-					<Trash2 class="size-3.5" />
-				</Button>
-			</form>
-		{/if}
-	</div>
+	<TodoDueDatePicker {todo} />
 
-	<!-- Due date -->
-	<form
-		method="POST"
-		action="?/setDueDate"
-		use:enhance={() =>
-			({ update }) =>
-				update({ invalidateAll: true })}
-		class="flex items-center gap-2"
-	>
-		<input type="hidden" name="id" value={todo.id} />
-		<Calendar class="size-4 shrink-0 text-muted-foreground" />
-		<input
-			type="date"
-			name="dueDate"
-			value={todo.dueDate ? new Date(todo.dueDate).toISOString().split('T')[0] : ''}
-			class="rounded-md border border-input bg-background px-2 py-1 text-sm text-foreground"
-			onchange={(e) => (e.target as HTMLInputElement).form?.requestSubmit()}
-		/>
-		{#if todo.dueDate}
-			<Button
-				type="submit"
-				variant="ghost"
-				size="icon"
-				class="size-6"
-				title="Clear due date"
-				onclick={(e) => {
-					e.preventDefault();
-					const form = (e.target as HTMLElement).closest('form') as HTMLFormElement;
-					const input = form?.querySelector('input[name="dueDate"]') as HTMLInputElement;
-					if (input) {
-						input.value = '';
-						form.requestSubmit();
-					}
-				}}
-			>
-				<X class="size-3" />
-			</Button>
-		{/if}
-	</form>
-
-	<!-- Parent -->
 	{#if parent}
 		<div class="flex flex-col gap-1">
 			<h2 class="text-xs font-medium tracking-wider text-muted-foreground uppercase">Parent</h2>
@@ -184,7 +40,6 @@
 		</div>
 	{/if}
 
-	<!-- Subtasks -->
 	<div class="flex flex-col gap-1">
 		<div class="flex items-center justify-between">
 			<h2 class="text-xs font-medium tracking-wider text-muted-foreground uppercase">
@@ -207,77 +62,13 @@
 		</div>
 
 		{#if addingChild}
-			<form
-				method="POST"
-				action="?/createChild"
-				use:enhance={() =>
-					async ({ result, update }) => {
-						if (result.type === 'failure') {
-							childError = (result.data as { error?: string })?.error ?? 'Failed to create subtask';
-							return;
-						}
-						addingChild = false;
-						newChildTitle = '';
-						childError = '';
-						await update({ invalidateAll: true });
-					}}
-				class="flex items-center gap-2"
-			>
-				<input type="hidden" name="parentId" value={todo.id} />
-				<Input
-					name="title"
-					bind:value={newChildTitle}
-					bind:ref={childInput}
-					placeholder="Subtask title"
-					class="flex-1"
-				/>
-				<Button type="submit" variant="ghost" size="icon" class="text-primary"
-					><Check class="size-4" /></Button
-				>
-				<Button
-					type="button"
-					variant="ghost"
-					size="icon"
-					onclick={() => {
-						addingChild = false;
-						childError = '';
-					}}><X class="size-4" /></Button
-				>
-			</form>
-		{/if}
-
-		{#if childError}
-			<p class="text-xs text-destructive">{childError}</p>
+			<CreateChildTodoForm parentId={todo.id} oncancel={() => (addingChild = false)} />
 		{/if}
 
 		{#if children.length === 0 && !addingChild}
 			<p class="text-sm text-muted-foreground italic">No subtasks.</p>
 		{/if}
 
-		{#each children as child (child.id)}
-			<div class="flex items-center" style="padding-left: {(child.depth - 1) * 1.25}rem">
-				<TodoItem todo={child} />
-				<form
-					method="POST"
-					action="?/deleteTodo"
-					use:enhance={() =>
-						({ update }) =>
-							update({ invalidateAll: true })}
-				>
-					<input type="hidden" name="id" value={child.id} />
-					<Button
-						type="submit"
-						variant="ghost"
-						size="icon"
-						class="size-5 hover:text-destructive"
-						onclick={(e) => {
-							if (!confirm(`Delete "${child.title}"?`)) e.preventDefault();
-						}}
-					>
-						<Trash2 class="size-3" />
-					</Button>
-				</form>
-			</div>
-		{/each}
+		<TodoChildList {children} />
 	</div>
 </div>
