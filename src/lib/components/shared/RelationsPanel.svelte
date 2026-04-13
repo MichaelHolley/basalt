@@ -2,8 +2,11 @@
 	import { enhance } from '$app/forms';
 	import { Button } from '$lib/components/ui/button';
 	import * as Tabs from '$lib/components/ui/tabs';
-	import { FileText, SquareCheckBig, Plus, Check, X } from '@lucide/svelte';
+	import { FileText, SquareCheckBig, Plus, X } from '@lucide/svelte';
 	import type { notes, todos } from '$lib/server/db/schema';
+	import LinkNoteForm from './LinkNoteForm.svelte';
+	import LinkTodoForm from './LinkTodoForm.svelte';
+	import CreateLinkedTodoForm from './CreateLinkedTodoForm.svelte';
 
 	interface RelatedItem {
 		relationId: string;
@@ -24,55 +27,16 @@
 
 	let { currentType, currentId, relatedItems, allNotes, allTodos, spaceId }: Props = $props();
 
-	// Note view state
-	let addingNoteRelation = $state(false);
-	let noteRelationTargetId = $state('');
-	let addingTodo = $state(false);
-	let newTodoTitle = $state('');
-	let addingTodoRelation = $state(false);
-	let todoRelationTargetId = $state('');
-
-	// Todo view state
-	let addingNoteFromTodo = $state(false);
-	let todoViewNoteTargetId = $state('');
+	let activeForm = $state<'linkNote' | 'linkTodo' | 'createTodo' | 'linkNoteFromTodo' | null>(null);
 
 	let relatedNotes = $derived(relatedItems.filter((i) => i.type === 'note'));
 	let relatedTodos = $derived(relatedItems.filter((i) => i.type === 'todo'));
 	let filteredNotes = $derived(
 		currentType === 'note' ? allNotes.filter((n) => n.id !== currentId) : allNotes
 	);
-	let filteredTodos = $derived(allTodos);
 
-	function openNoteRelation() {
-		addingTodo = false;
-		newTodoTitle = '';
-		addingTodoRelation = false;
-		todoRelationTargetId = '';
-		addingNoteRelation = !addingNoteRelation;
-		noteRelationTargetId = '';
-	}
-
-	function openAddTodo() {
-		addingNoteRelation = false;
-		noteRelationTargetId = '';
-		addingTodoRelation = false;
-		todoRelationTargetId = '';
-		addingTodo = !addingTodo;
-		newTodoTitle = '';
-	}
-
-	function openTodoRelation() {
-		addingNoteRelation = false;
-		noteRelationTargetId = '';
-		addingTodo = false;
-		newTodoTitle = '';
-		addingTodoRelation = !addingTodoRelation;
-		todoRelationTargetId = '';
-	}
-
-	function openNoteFromTodo() {
-		addingNoteFromTodo = !addingNoteFromTodo;
-		todoViewNoteTargetId = '';
+	function toggleForm(form: typeof activeForm) {
+		activeForm = activeForm === form ? null : form;
 	}
 </script>
 
@@ -91,7 +55,7 @@
 			</Tabs.List>
 
 			<Tabs.Content value="notes" class="flex flex-col gap-1">
-				{#if relatedNotes.length === 0 && !addingNoteRelation}
+				{#if relatedNotes.length === 0 && activeForm !== 'linkNote'}
 					<p class="text-xs text-muted-foreground italic">No linked notes.</p>
 				{:else}
 					<ul class="flex flex-col gap-0.5">
@@ -126,60 +90,27 @@
 					</ul>
 				{/if}
 
-				{#if addingNoteRelation}
-					<form
-						method="POST"
-						action="?/createRelation"
-						use:enhance={() =>
-							({ update }) => {
-								addingNoteRelation = false;
-								noteRelationTargetId = '';
-								update({ invalidateAll: true });
-							}}
-						class="flex flex-col gap-1.5"
-					>
-						<input type="hidden" name="currentType" value="note" />
-						<input type="hidden" name="currentId" value={currentId} />
-						<input type="hidden" name="targetType" value="note" />
-						<select
-							name="targetId"
-							bind:value={noteRelationTargetId}
-							class="w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
-							required
-						>
-							<option value="">Select note…</option>
-							{#each filteredNotes as n (n.id)}
-								<option value={n.id}>{n.title}</option>
-							{/each}
-						</select>
-						<div class="flex gap-1">
-							<Button type="submit" variant="ghost" size="icon" class="text-primary">
-								<Check class="size-4" />
-							</Button>
-							<Button
-								type="button"
-								variant="ghost"
-								size="icon"
-								onclick={() => (addingNoteRelation = false)}
-							>
-								<X class="size-4" />
-							</Button>
-						</div>
-					</form>
+				{#if activeForm === 'linkNote'}
+					<LinkNoteForm
+						{currentType}
+						{currentId}
+						availableNotes={filteredNotes}
+						onclose={() => (activeForm = null)}
+					/>
 				{/if}
 
 				<Button
 					variant="ghost"
 					size="sm"
 					class="mt-1 h-6 w-full justify-start gap-1 text-xs text-muted-foreground"
-					onclick={openNoteRelation}
+					onclick={() => toggleForm('linkNote')}
 				>
 					<Plus class="size-3" /> Link note
 				</Button>
 			</Tabs.Content>
 
 			<Tabs.Content value="todos" class="flex flex-col gap-1">
-				{#if relatedTodos.length === 0 && !addingTodo && !addingTodoRelation}
+				{#if relatedTodos.length === 0 && activeForm !== 'createTodo' && activeForm !== 'linkTodo'}
 					<p class="text-xs text-muted-foreground italic">No linked todos.</p>
 				{:else}
 					<ul class="flex flex-col gap-0.5">
@@ -214,93 +145,12 @@
 					</ul>
 				{/if}
 
-				{#if addingTodo && spaceId}
-					<form
-						method="POST"
-						action="?/createLinkedTodo"
-						use:enhance={() =>
-							({ update }) => {
-								addingTodo = false;
-								newTodoTitle = '';
-								update({ invalidateAll: true });
-							}}
-						class="flex flex-col gap-1.5"
-					>
-						<input type="hidden" name="noteId" value={currentId} />
-						<input type="hidden" name="spaceId" value={spaceId} />
-						<input
-							name="title"
-							type="text"
-							bind:value={newTodoTitle}
-							placeholder="Todo title…"
-							required
-							onkeydown={(e) => {
-								if (e.key === 'Escape') {
-									addingTodo = false;
-									newTodoTitle = '';
-								}
-							}}
-							class="w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
-						/>
-						<div class="flex gap-1">
-							<Button type="submit" variant="ghost" size="icon" class="text-primary">
-								<Check class="size-4" />
-							</Button>
-							<Button
-								type="button"
-								variant="ghost"
-								size="icon"
-								onclick={() => {
-									addingTodo = false;
-									newTodoTitle = '';
-								}}
-							>
-								<X class="size-4" />
-							</Button>
-						</div>
-					</form>
+				{#if activeForm === 'createTodo' && spaceId}
+					<CreateLinkedTodoForm noteId={currentId} {spaceId} onclose={() => (activeForm = null)} />
 				{/if}
 
-				{#if addingTodoRelation}
-					<form
-						method="POST"
-						action="?/createRelation"
-						use:enhance={() =>
-							({ update }) => {
-								addingTodoRelation = false;
-								todoRelationTargetId = '';
-								update({ invalidateAll: true });
-							}}
-						class="flex flex-col gap-1.5"
-					>
-						<input type="hidden" name="currentType" value="note" />
-						<input type="hidden" name="currentId" value={currentId} />
-						<input type="hidden" name="targetType" value="todo" />
-						<select
-							name="targetId"
-							bind:value={todoRelationTargetId}
-							class="w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
-							required
-						>
-							<option value="">Select todo…</option>
-							{#each filteredTodos as t (t.id)}
-								<option value={t.id}>{t.title}</option>
-							{/each}
-						</select>
-						<div class="flex gap-1">
-							<Button type="submit" variant="ghost" size="icon" class="text-primary">
-								<Check class="size-4" />
-							</Button>
-							<Button
-								type="button"
-								variant="ghost"
-								size="icon"
-								onclick={() => (addingTodoRelation = false)}
-							>
-								<X class="size-4" />
-							</Button>
-						</div>
-					</form>
+				{#if activeForm === 'linkTodo'}
+					<LinkTodoForm {currentId} availableTodos={allTodos} onclose={() => (activeForm = null)} />
 				{/if}
 
 				<div class="mt-1 flex gap-1">
@@ -309,7 +159,7 @@
 							variant="ghost"
 							size="sm"
 							class="h-6 flex-1 justify-start gap-1 text-xs text-muted-foreground"
-							onclick={openAddTodo}
+							onclick={() => toggleForm('createTodo')}
 						>
 							<SquareCheckBig class="size-3" /> New todo
 						</Button>
@@ -318,7 +168,7 @@
 						variant="ghost"
 						size="sm"
 						class="h-6 flex-1 justify-start gap-1 text-xs text-muted-foreground"
-						onclick={openTodoRelation}
+						onclick={() => toggleForm('linkTodo')}
 					>
 						<Plus class="size-3" /> Link todo
 					</Button>
@@ -333,56 +183,25 @@
 				variant="ghost"
 				size="icon"
 				class="size-5"
-				onclick={openNoteFromTodo}
+				onclick={() => toggleForm('linkNoteFromTodo')}
 				title="Link note"
 			>
 				<Plus class="size-3" />
 			</Button>
 		</div>
 
-		{#if addingNoteFromTodo}
-			<form
-				method="POST"
-				action="?/createRelation"
-				use:enhance={() =>
-					({ update }) => {
-						addingNoteFromTodo = false;
-						todoViewNoteTargetId = '';
-						update({ invalidateAll: true });
-					}}
-				class="mb-2 flex flex-col gap-1.5"
-			>
-				<input type="hidden" name="currentType" value="todo" />
-				<input type="hidden" name="currentId" value={currentId} />
-				<input type="hidden" name="targetType" value="note" />
-				<select
-					name="targetId"
-					bind:value={todoViewNoteTargetId}
-					class="w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
-					required
-				>
-					<option value="">Select note…</option>
-					{#each filteredNotes as n (n.id)}
-						<option value={n.id}>{n.title}</option>
-					{/each}
-				</select>
-				<div class="flex gap-1">
-					<Button type="submit" variant="ghost" size="icon" class="text-primary">
-						<Check class="size-4" />
-					</Button>
-					<Button
-						type="button"
-						variant="ghost"
-						size="icon"
-						onclick={() => (addingNoteFromTodo = false)}
-					>
-						<X class="size-4" />
-					</Button>
-				</div>
-			</form>
+		{#if activeForm === 'linkNoteFromTodo'}
+			<div class="mb-2">
+				<LinkNoteForm
+					{currentType}
+					{currentId}
+					availableNotes={filteredNotes}
+					onclose={() => (activeForm = null)}
+				/>
+			</div>
 		{/if}
 
-		{#if relatedNotes.length === 0 && !addingNoteFromTodo}
+		{#if relatedNotes.length === 0 && activeForm !== 'linkNoteFromTodo'}
 			<p class="text-xs text-muted-foreground italic">No linked notes.</p>
 		{:else}
 			<ul class="flex flex-col gap-0.5">
