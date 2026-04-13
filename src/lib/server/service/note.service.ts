@@ -3,7 +3,7 @@ import path from 'path';
 import { eq, asc, desc, or, sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { notes } from '$lib/server/db/schema';
-import { slugify } from '$lib/server/db/utils';
+import { slugify } from '$lib/server/utils/text';
 
 export function getAllNotes() {
 	return db.select().from(notes).orderBy(asc(notes.title)).all();

@@ -4,7 +4,7 @@
 	import SpaceNameForm from '$lib/components/spaces/SpaceNameForm.svelte';
 	import TodoTree from '$lib/components/todos/TodoTree.svelte';
 	import { Button } from '$lib/components/ui/button';
-	import type { TodoNode } from '$lib/server/db/utils';
+	import type { TodoNode } from '$lib/server/db/tree';
 	import type { spaces, notes as NotesTable } from '$lib/server/db/schema';
 	import { FileText, Plus } from '@lucide/svelte';
 

@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import { configExists } from '$lib/server/config';
-import { buildTree } from '$lib/server/db/utils';
+import { buildTree } from '$lib/server/db/tree';
 import { getAllSpaces } from '$lib/server/service/space.service';
 import { getAllNotes } from '$lib/server/service/note.service';
 import type { LayoutServerLoad } from './$types';

@@ -1,5 +1,5 @@
 import { page } from '$app/state';
-import type { SpaceNode, Note } from '$lib/server/db/utils';
+import type { SpaceNode, Note } from '$lib/server/db/tree';
 
 class AppStore {
 	spaces = $state<SpaceNode[]>([]);

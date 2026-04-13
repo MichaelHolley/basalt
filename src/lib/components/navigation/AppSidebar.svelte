@@ -1,54 +1,13 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
 	import * as Sidebar from '$lib/components/ui/sidebar';
-	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
-	import { House, Settings, FolderPlus, Check, X, Search, FileText } from '@lucide/svelte';
+	import { House, Settings, FolderPlus } from '@lucide/svelte';
 	import SpaceTree from '$lib/components/navigation/SpaceTree.svelte';
+	import SidebarSearch from '$lib/components/navigation/SidebarSearch.svelte';
+	import CreateSpaceForm from '$lib/components/navigation/CreateSpaceForm.svelte';
 	import { appStore } from '@/stores/app.svelte';
-	import { Debounced, watch } from 'runed';
 
 	let addingSpace = $state(false);
-	let newSpaceName = $state('');
-	let newSpaceInput = $state<HTMLInputElement | null>(null);
-
-	// Search
-	let searchQuery = $state('');
-	let searchResults = $state<{ note_id: string; title: string; snippet: string }[]>([]);
-	const debouncedQuery = new Debounced(() => searchQuery, 200);
-
-	watch(
-		() => debouncedQuery.current,
-		() => {
-			if (!debouncedQuery.current.trim()) {
-				searchResults = [];
-				return;
-			}
-			fetch(`/api/search?q=${encodeURIComponent(debouncedQuery.current)}`)
-				.then((res) => res.json())
-				.then((data) => (searchResults = data.results ?? []));
-		},
-		{ lazy: true }
-	);
-
-	function clearSearch() {
-		searchQuery = '';
-		searchResults = [];
-	}
-
-	function startAdd() {
-		addingSpace = true;
-		newSpaceName = '';
-	}
-
-	function cancelAdd() {
-		addingSpace = false;
-		newSpaceName = '';
-	}
-
-	$effect(() => {
-		if (addingSpace) newSpaceInput?.focus();
-	});
 </script>
 
 <Sidebar.Root collapsible="icon">
@@ -75,49 +34,18 @@
 	</Sidebar.Header>
 
 	<Sidebar.Content>
-		<!-- Search — hidden in collapsed icon mode -->
-		<div class="px-2 pt-2 group-data-[collapsible=icon]:hidden">
-			<div class="relative">
-				<Search class="absolute top-1/2 left-2 size-3 -translate-y-1/2 text-muted-foreground" />
-				<input
-					type="search"
-					placeholder="Search notes…"
-					bind:value={searchQuery}
-					class="h-7 w-full rounded-md border border-input bg-background pr-2 pl-6 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-1"
-				/>
-			</div>
-			{#if searchResults.length > 0}
-				<ul class="mt-1 flex flex-col rounded-md border border-border bg-popover py-1 shadow-md">
-					{#each searchResults as result (result.note_id)}
-						<li>
-							<a
-								href="/spaces/{result.note_id}"
-								onclick={clearSearch}
-								class="flex flex-col gap-0.5 px-2 py-1.5 hover:bg-accent"
-							>
-								<span class="flex items-center gap-1.5 text-xs font-medium">
-									<FileText class="size-3 shrink-0 text-muted-foreground" />
-									{result.title}
-								</span>
-								{#if result.snippet}
-									<span class="line-clamp-1 pl-4.5 text-[10px] text-muted-foreground">
-										<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-										{@html result.snippet}
-									</span>
-								{/if}
-							</a>
-						</li>
-					{/each}
-				</ul>
-			{:else if searchQuery.trim() && searchResults.length === 0}
-				<p class="mt-1 px-2 py-1.5 text-xs text-muted-foreground italic">No results.</p>
-			{/if}
-		</div>
+		<SidebarSearch />
 
 		<Sidebar.Group>
 			<Sidebar.GroupLabel class="flex items-center justify-between pr-1">
 				Spaces
-				<Button variant="ghost" size="icon" class="size-5" onclick={startAdd} title="New space">
+				<Button
+					variant="ghost"
+					size="icon"
+					class="size-5"
+					onclick={() => (addingSpace = true)}
+					title="New space"
+				>
 					<FolderPlus class="size-3" />
 				</Button>
 			</Sidebar.GroupLabel>
@@ -125,37 +53,10 @@
 				<Sidebar.Menu>
 					{#if addingSpace}
 						<Sidebar.MenuItem>
-							<form
-								method="POST"
-								action="/spaces?/create"
-								use:enhance={() => {
-									return ({ update }) => {
-										cancelAdd();
-										update({ invalidateAll: true });
-									};
-								}}
-								class="flex items-center gap-1 px-2 py-1"
-							>
-								<Input
-									name="name"
-									bind:value={newSpaceName}
-									bind:ref={newSpaceInput}
-									placeholder="Space name"
-									class="h-6 flex-1 text-xs"
-								/>
-								<Button type="submit" variant="ghost" size="icon" class="size-5 text-primary">
-									<Check class="size-3" />
-								</Button>
-								<Button
-									type="button"
-									variant="ghost"
-									size="icon"
-									class="size-5"
-									onclick={cancelAdd}
-								>
-									<X class="size-3" />
-								</Button>
-							</form>
+							<CreateSpaceForm
+								oncreated={() => (addingSpace = false)}
+								oncancelled={() => (addingSpace = false)}
+							/>
 						</Sidebar.MenuItem>
 					{/if}
 					<SpaceTree spaces={appStore.spaces} />

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { Checkbox } from '$lib/components/ui/checkbox';
-	import type { Todo } from '$lib/server/db/utils';
+	import type { Todo } from '$lib/server/db/tree';
 	import { cn } from '$lib/utils';
 	import { Calendar } from '@lucide/svelte';
 	import { SvelteDate } from 'svelte/reactivity';

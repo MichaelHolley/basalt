@@ -3,8 +3,8 @@ import { z } from 'zod';
 import fs from 'fs';
 import path from 'path';
 import { getConfig } from '$lib/server/config';
-import { buildTodoTree } from '$lib/server/db/utils';
-import type { TodoWithDepth } from '$lib/server/db/utils';
+import { buildTodoTree } from '$lib/server/db/tree';
+import type { TodoWithDepth } from '$lib/server/db/tree';
 import { getSpace } from '$lib/server/service/space.service';
 import {
 	getNote,

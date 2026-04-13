@@ -3,7 +3,8 @@ import path from 'path';
 import { eq, asc, sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { spaces } from '$lib/server/db/schema';
-import { slugify, renameSpace as renameSpaceInDb } from '$lib/server/db/utils';
+import { slugify } from '$lib/server/utils/text';
+import { renameSpace as renameSpaceInDb } from '$lib/server/utils/rename';
 
 export function getAllSpaces() {
 	return db.select().from(spaces).orderBy(asc(spaces.id)).all();

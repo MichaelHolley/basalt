@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { TodoNode } from '$lib/server/db/utils';
+	import type { TodoNode } from '$lib/server/db/tree';
 	import TodoItem from './TodoItem.svelte';
 	import TodoTree from './TodoTree.svelte';
 
