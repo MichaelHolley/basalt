@@ -29,6 +29,7 @@
 	<div class="flex h-full">
 		<TodoView
 			todo={todoData.todo}
+			parent={todoData.parent}
 			children={todoData.children}
 			depth={todoData.depth}
 			maxDepth={todoData.maxDepth}

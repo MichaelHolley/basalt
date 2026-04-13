@@ -5,17 +5,18 @@
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { Input } from '$lib/components/ui/input';
 	import type { todos } from '$lib/server/db/schema';
-	import type { TodoWithDepth } from '$lib/server/db/utils';
+	import type { Todo, TodoWithDepth } from '$lib/server/db/utils';
 	import { Calendar, Check, Pencil, Plus, Trash2, X } from '@lucide/svelte';
 
 	interface Props {
 		todo: typeof todos.$inferSelect;
+		parent: Todo | null;
 		children: TodoWithDepth[];
 		depth: number;
 		maxDepth: number;
 	}
 
-	let { todo, children, depth, maxDepth }: Props = $props();
+	let { todo, parent, children, depth, maxDepth }: Props = $props();
 
 	let editing = $state(false);
 	let editTitle = $state('');
@@ -170,6 +171,18 @@
 			</Button>
 		{/if}
 	</form>
+
+	<!-- Parent -->
+	{#if parent}
+		<div class="flex flex-col gap-1">
+			<h2 class="text-xs font-medium tracking-wider text-muted-foreground uppercase">Parent</h2>
+			<ul class="flex flex-col">
+				<li>
+					<TodoItem todo={parent} />
+				</li>
+			</ul>
+		</div>
+	{/if}
 
 	<!-- Subtasks -->
 	<div class="flex flex-col gap-1">

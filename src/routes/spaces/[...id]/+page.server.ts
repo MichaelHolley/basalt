@@ -98,9 +98,12 @@ export const load: PageServerLoad = async ({ params }) => {
 		const relatedItems = resolveRelatedItems(todoRelations, 'todo', todo.id);
 		const rootSpace = todo.spaceId.split('/')[0];
 
+		const parent = todo.parentId ? (getTodo(todo.parentId) ?? null) : null;
+
 		return {
 			type: 'todo' as const,
 			todo,
+			parent,
 			children,
 			depth: getTodoDepth(todoId),
 			maxDepth: MAX_TODO_DEPTH,
