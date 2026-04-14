@@ -5,12 +5,11 @@
 	import TodoItem from '$lib/components/todos/TodoItem.svelte';
 	import TodoTitleForm from '$lib/components/todos/TodoTitleForm.svelte';
 	import { Button } from '$lib/components/ui/button';
-	import type { todos } from '$lib/server/db/schema';
 	import type { Todo, TodoWithDepth } from '$lib/server/db/types';
 	import { Plus } from '@lucide/svelte';
 
 	interface Props {
-		todo: typeof todos.$inferSelect;
+		todo: Todo;
 		parent: Todo | null;
 		children: TodoWithDepth[];
 		depth: number;

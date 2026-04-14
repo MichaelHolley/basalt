@@ -2,11 +2,11 @@
 	import { enhance } from '$app/forms';
 	import { Button } from '$lib/components/ui/button';
 	import { Check, X } from '@lucide/svelte';
-	import type { todos } from '$lib/server/db/schema';
+	import type { Todo } from '$lib/server/db/types';
 
 	interface Props {
 		currentId: string;
-		availableTodos: (typeof todos.$inferSelect)[];
+		availableTodos: Todo[];
 		onclose: () => void;
 	}
 

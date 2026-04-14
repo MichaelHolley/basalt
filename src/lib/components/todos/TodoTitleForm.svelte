@@ -3,11 +3,11 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { Input } from '$lib/components/ui/input';
-	import type { todos } from '$lib/server/db/schema';
+	import type { Todo } from '$lib/server/db/types';
 	import { Check, Pencil, Trash2, X } from '@lucide/svelte';
 
 	interface Props {
-		todo: typeof todos.$inferSelect;
+		todo: Todo;
 	}
 
 	let { todo }: Props = $props();

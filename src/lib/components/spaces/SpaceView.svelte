@@ -4,14 +4,13 @@
 	import SpaceNameForm from '$lib/components/spaces/SpaceNameForm.svelte';
 	import TodoTree from '$lib/components/todos/TodoTree.svelte';
 	import { Button } from '$lib/components/ui/button';
-	import type { TodoNode } from '$lib/server/db/types';
-	import type { spaces, notes as NotesTable } from '$lib/server/db/schema';
+	import type { TodoNode, Space, Note } from '$lib/server/db/types';
 	import { FileText, Plus } from '@lucide/svelte';
 
 	interface Props {
-		space: typeof spaces.$inferSelect;
+		space: Space;
 		todos: TodoNode[];
-		notes: (typeof NotesTable.$inferSelect)[];
+		notes: Note[];
 	}
 
 	let { space, todos, notes }: Props = $props();

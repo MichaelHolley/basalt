@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { Button } from '$lib/components/ui/button';
-	import type { todos } from '$lib/server/db/schema';
+	import type { Todo } from '$lib/server/db/types';
 	import { Calendar, X } from '@lucide/svelte';
 
 	interface Props {
-		todo: typeof todos.$inferSelect;
+		todo: Todo;
 	}
 
 	let { todo }: Props = $props();

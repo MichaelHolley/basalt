@@ -2,11 +2,11 @@
 	import { enhance } from '$app/forms';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
-	import type { spaces } from '$lib/server/db/schema';
+	import type { Space } from '$lib/server/db/types';
 	import { Check, Pencil, X } from '@lucide/svelte';
 
 	interface Props {
-		space: typeof spaces.$inferSelect;
+		space: Space;
 	}
 
 	let { space }: Props = $props();

@@ -2,12 +2,12 @@
 	import { enhance } from '$app/forms';
 	import { Button } from '$lib/components/ui/button';
 	import { Check, X } from '@lucide/svelte';
-	import type { notes } from '$lib/server/db/schema';
+	import type { Note } from '$lib/server/db/types';
 
 	interface Props {
 		currentType: 'note' | 'todo';
 		currentId: string;
-		availableNotes: (typeof notes.$inferSelect)[];
+		availableNotes: Note[];
 		onclose: () => void;
 	}
 

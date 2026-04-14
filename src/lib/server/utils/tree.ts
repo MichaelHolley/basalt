@@ -1,7 +1,4 @@
-import type { spaces } from '../db/schema.js';
-import type { TodoNode, Todo, SpaceNode } from '../db/types.js';
-
-type Space = typeof spaces.$inferSelect;
+import type { TodoNode, Todo, Space, SpaceNode } from '../db/types.js';
 
 export function buildTodoTree(flat: Todo[]): TodoNode[] {
 	const map = new Map<string, TodoNode>();

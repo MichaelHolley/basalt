@@ -3,7 +3,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import * as Tabs from '$lib/components/ui/tabs';
 	import { FileText, SquareCheckBig, Plus, X } from '@lucide/svelte';
-	import type { notes, todos } from '$lib/server/db/schema';
+	import type { Note, Todo } from '$lib/server/db/types';
 	import LinkNoteForm from './LinkNoteForm.svelte';
 	import LinkTodoForm from './LinkTodoForm.svelte';
 	import CreateLinkedTodoForm from './CreateLinkedTodoForm.svelte';
@@ -20,8 +20,8 @@
 		currentType: 'note' | 'todo';
 		currentId: string;
 		relatedItems: RelatedItem[];
-		allNotes: (typeof notes.$inferSelect)[];
-		allTodos: (typeof todos.$inferSelect)[];
+		allNotes: Note[];
+		allTodos: Todo[];
 		spaceId?: string;
 	}
 

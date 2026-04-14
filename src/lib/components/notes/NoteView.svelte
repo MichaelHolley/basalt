@@ -4,11 +4,11 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
 	import { Pencil, Trash2, Check, X, Copy } from '@lucide/svelte';
-	import type { notes } from '$lib/server/db/schema';
+	import type { Note } from '$lib/server/db/types';
 	import { Debounced, watch } from 'runed';
 
 	interface Props {
-		note: typeof notes.$inferSelect;
+		note: Note;
 		content: string;
 	}
 
