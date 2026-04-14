@@ -72,18 +72,6 @@
 		}
 	});
 
-	$effect(() => {
-		function captureEsc(e: KeyboardEvent) {
-			if (e.key === 'Escape' && createMode !== null && open) {
-				e.stopImmediatePropagation();
-				e.preventDefault();
-				createMode = null;
-			}
-		}
-		window.addEventListener('keydown', captureEsc, true);
-		return () => window.removeEventListener('keydown', captureEsc, true);
-	});
-
 	watch(
 		() => debouncedQuery.current,
 		() => {
@@ -97,7 +85,11 @@
 
 	// ── Functions ──────────────────────────────────────────────────────────────
 	function handleKeydown(e: KeyboardEvent) {
-		if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+		if (e.key === 'Escape' && createMode !== null && open) {
+			e.stopImmediatePropagation();
+			e.preventDefault();
+			createMode = null;
+		} else if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
 			e.preventDefault();
 			open = true;
 		}
