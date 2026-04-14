@@ -1,7 +1,4 @@
-import type { relations } from './schema.js';
-
 export type RelationSide = { type: 'note' | 'todo'; id: string };
-export type Relation = typeof relations.$inferSelect;
 
 // Normalizes a relation pair so (A→B) and (B→A) always produce the same stored row.
 // Sorts lexicographically by "type:id" key so the lesser key is always the source.
