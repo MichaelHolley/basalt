@@ -12,6 +12,7 @@ export type RelatedItem = {
 	id: string;
 	title: string;
 	href: string;
+	status?: string;
 };
 
 export function getRelationsForItem(type: 'note' | 'todo', id: string) {
@@ -56,7 +57,8 @@ export function resolveRelatedItems(
 							type: 'todo' as const,
 							id: related.id,
 							title: related.title,
-							href: `/spaces/${related.spaceId}/${related.id}`
+							href: `/spaces/${related.spaceId}/${related.id}`,
+							status: related.status
 						}
 					: null;
 			}

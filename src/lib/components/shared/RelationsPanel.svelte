@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { Button } from '$lib/components/ui/button';
 	import * as Tabs from '$lib/components/ui/tabs';
+	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { FileText, SquareCheckBig, Plus, X } from '@lucide/svelte';
 	import type { Note, Todo } from '$lib/server/db/types';
 	import LinkNoteForm from './LinkNoteForm.svelte';
@@ -14,6 +15,7 @@
 		id: string;
 		title: string;
 		href: string;
+		status?: string;
 	}
 
 	interface Props {
@@ -115,12 +117,29 @@
 				{:else}
 					<ul class="flex flex-col gap-0.5">
 						{#each relatedTodos as item (item.relationId)}
+							{@const isDone = item.status === 'done'}
 							<li class="flex items-center gap-1.5">
-								<SquareCheckBig class="size-3.5 shrink-0 text-muted-foreground" />
+								<form
+									method="POST"
+									action="{item.href}?/toggle"
+									use:enhance={() =>
+										({ update }) =>
+											update({ invalidateAll: true })}
+								>
+									<input type="hidden" name="id" value={item.id} />
+									<Checkbox
+										checked={isDone}
+										onclick={(e) => {
+											(e.currentTarget.closest('form') as HTMLFormElement)?.requestSubmit();
+										}}
+										class="size-3.5 shrink-0"
+									/>
+								</form>
 								<a
 									href={item.href}
-									class="min-w-0 flex-1 truncate text-xs text-muted-foreground hover:text-foreground"
-									>{item.title}</a
+									class="min-w-0 flex-1 truncate text-xs {isDone
+										? 'text-muted-foreground line-through'
+										: 'text-muted-foreground hover:text-foreground'}">{item.title}</a
 								>
 								<form
 									method="POST"
