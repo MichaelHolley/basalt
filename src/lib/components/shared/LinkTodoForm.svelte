@@ -24,7 +24,7 @@
 			onclose();
 			update({ invalidateAll: true });
 		}}
-	class="flex flex-col gap-1.5"
+	class="flex items-center gap-1"
 >
 	<input type="hidden" name="currentType" value="note" />
 	<input type="hidden" name="currentId" value={currentId} />
@@ -32,7 +32,7 @@
 	<select
 		name="targetId"
 		bind:value={targetId}
-		class="w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
+		class="min-w-0 flex-1 rounded-md border border-input bg-background px-2 py-1 text-xs"
 		required
 	>
 		<option value="">Select todo…</option>
@@ -40,12 +40,10 @@
 			<option value={t.id}>{t.title}</option>
 		{/each}
 	</select>
-	<div class="flex gap-1">
-		<Button type="submit" variant="ghost" size="icon" class="text-primary">
-			<Check class="size-4" />
-		</Button>
-		<Button type="button" variant="ghost" size="icon" onclick={onclose}>
-			<X class="size-4" />
-		</Button>
-	</div>
+	<Button type="submit" variant="ghost" size="icon" class="size-5 shrink-0 text-primary">
+		<Check class="size-3" />
+	</Button>
+	<Button type="button" variant="ghost" size="icon" class="size-5 shrink-0" onclick={onclose}>
+		<X class="size-3" />
+	</Button>
 </form>
