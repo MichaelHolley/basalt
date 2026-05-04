@@ -31,10 +31,10 @@ export function createSpace(name: string, parentId: string | undefined, vaultPat
 	return id;
 }
 
-export function renameSpace(id: string, name: string, vaultPath: string): void {
+export function renameSpace(id: string, name: string, vaultPath: string): string {
 	const existing = getSpace(id);
 	if (!existing) throw new Error('Space not found');
-	renameSpaceInDb(db, id, name, vaultPath);
+	return renameSpaceInDb(db, id, name, vaultPath);
 }
 
 export function deleteSpace(id: string, vaultPath: string): void {

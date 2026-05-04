@@ -31,17 +31,7 @@
 </script>
 
 {#if editingName}
-	<form
-		method="POST"
-		action="/spaces?/rename"
-		use:enhance={() =>
-			({ update }) => {
-				editingName = false;
-				editedName = '';
-				update({ invalidateAll: true });
-			}}
-		class="flex items-center gap-2"
-	>
+	<form method="POST" action="/spaces?/rename" use:enhance class="flex items-center gap-2">
 		<input type="hidden" name="id" value={space.id} />
 		<Input
 			name="name"

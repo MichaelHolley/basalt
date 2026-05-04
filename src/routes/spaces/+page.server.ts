@@ -1,4 +1,4 @@
-import { fail } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
 import { getConfig } from '$lib/server/config';
 import { getSpace, createSpace, renameSpace, deleteSpace } from '$lib/server/service/space.service';
@@ -54,8 +54,8 @@ export const actions: Actions = {
 		const existing = getSpace(result.data.id);
 		if (!existing) return fail(404, { error: 'Space not found' });
 
-		renameSpace(result.data.id, result.data.name, config.vaultPath);
-		return { success: true };
+		const newId = renameSpace(result.data.id, result.data.name, config.vaultPath);
+		redirect(302, `/spaces/${newId}`);
 	},
 
 	delete: async ({ request }) => {
