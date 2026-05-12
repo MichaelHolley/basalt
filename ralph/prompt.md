@@ -38,8 +38,8 @@ Complete the task.
 
 Before committing, run the feedback loops:
 
-- `bun run check` to run the tests
-- `bun run lint` to run the type checker
+- `pnpm check` to run the tests
+- `pnpm lint` to run the type checker
 
 # COMMIT
 

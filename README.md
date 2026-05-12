@@ -15,18 +15,18 @@ A local-first, single-user notes app. Notes are stored as plain `.md` files on d
 ## Stack
 
 - [SvelteKit](https://kit.svelte.dev) — framework
-- [Drizzle ORM](https://orm.drizzle.team) + `bun:sqlite` — database
+- [Drizzle ORM](https://orm.drizzle.team) + `better-sqlite3` — database
 - [Milkdown Crepe](https://milkdown.dev) — WYSIWYG markdown editor
 - [Tailwind CSS v4](https://tailwindcss.com) + [shadcn-svelte](https://www.shadcn-svelte.com) — styling
 - [runed](https://runed.dev) — Svelte 5 reactive utilities (debouncing, watching)
 
 ## Setup
 
-**Prerequisites:** [Bun](https://bun.sh) ≥ 1.0
+**Prerequisites:** [Node.js](https://nodejs.org) ≥ 22 and [pnpm](https://pnpm.io) ≥ 10
 
 ```bash
-bun install
-bun dev
+pnpm install
+pnpm dev
 ```
 
 Open [http://localhost:5173](http://localhost:5173). On first launch you'll be prompted to choose a vault directory (defaults to `~/Documents/Basalt/`).

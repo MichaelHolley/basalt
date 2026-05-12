@@ -7,20 +7,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Basalt** is a local-first, single-user notes and todos app. No auth, no cloud — runs entirely on your machine.
 
 - **Framework**: SvelteKit with Svelte 5 (rune mode)
-- **Database**: SQLite via Drizzle ORM (uses `bun:sqlite` natively)
+- **Database**: SQLite via Drizzle ORM (uses `better-sqlite3`)
 - **Editor**: Milkdown Crepe (WYSIWYG markdown)
 - **UI**: shadcn-svelte + Tailwind CSS v4
-- **Runtime**: Bun
+- **Runtime**: Node
 
 ## Commands
 
 ```bash
-bun --bun vite dev         # Start dev server
+pnpm dev                   # Start dev server
 vite build                 # Production build
-bun run check              # Type-check (svelte-check)
-bun run check:watch        # Type-check in watch mode
-bunx drizzle-kit generate  # Generate migrations from schema changes
-bunx drizzle-kit migrate   # Apply migrations
+pnpm check                 # Type-check (svelte-check)
+pnpm check:watch           # Type-check in watch mode
+pnpm exec drizzle-kit generate  # Generate migrations from schema changes
+pnpm exec drizzle-kit migrate   # Apply migrations
 ```
 
 No test suite is configured.
