@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { Crepe } from '@milkdown/crepe';
+	import type { Crepe } from '@milkdown/crepe';
 	import '@milkdown/crepe/theme/common/style.css';
 	import '@milkdown/crepe/theme/frame.css';
 
@@ -8,7 +8,7 @@
 		value?: string;
 		readonly?: boolean;
 		noteId?: string;
-		onchange?: (markdown: string) => void;
+		onchange?: (noteId: string | undefined, markdown: string) => void;
 	}
 
 	let { value = '', readonly = false, noteId, onchange }: Props = $props();
@@ -34,7 +34,10 @@
 		return markdown.split(`/api/images/${sid}/assets/`).join('assets/');
 	}
 
+	// Crepe pulls in DOMPurify, which throws when evaluated in Node — load it in the browser only.
 	onMount(async () => {
+		const { Crepe } = await import('@milkdown/crepe');
+
 		crepe = new Crepe({
 			root: container,
 			defaultValue: value,
@@ -61,7 +64,7 @@
 
 		crepe.on((listener) => {
 			listener.markdownUpdated((_ctx, markdown) => {
-				onchange?.(toRelativePaths(markdown));
+				onchange?.(noteId, toRelativePaths(markdown));
 			});
 		});
 
