@@ -17,14 +17,12 @@
 	let editing = $state(false);
 	let editTitle = $state('');
 	let titleInput = $state<HTMLInputElement | null>(null);
-	let currentContent = $state('');
-	let pendingSave = $state<string | null>(null);
+	let pendingSave = $state<{ id: string; content: string } | null>(null);
 	let copied = $state(false);
 	const debouncedSave = new Debounced(() => pendingSave, 1000);
 
-	$effect(() => {
-		currentContent = content;
-	});
+	let currentContent = $derived(content);
+
 	$effect(() => {
 		if (editing) titleInput?.focus();
 	});
@@ -33,18 +31,36 @@
 		() => debouncedSave.current,
 		() => {
 			if (debouncedSave.current === null) return;
-			fetch('/api/notes/autosave', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ id: note.id, content: debouncedSave.current })
-			});
+			save(debouncedSave.current);
 		},
 		{ lazy: true }
 	);
 
-	function handleContentChange(newContent: string) {
-		currentContent = newContent;
-		pendingSave = newContent;
+	watch(
+		() => note.id,
+		() => {
+			if (pendingSave && pendingSave.id !== note.id) {
+				save(pendingSave);
+				pendingSave = null;
+			}
+		},
+		{ lazy: true }
+	);
+
+	function save(payload: { id: string; content: string }) {
+		fetch('/api/notes/autosave', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(payload)
+		});
+	}
+
+	// The editor reports the id it was mounted with, so an update emitted while
+	// switching notes is saved to the note it came from, not the newly opened one.
+	function handleContentChange(noteId: string | undefined, newContent: string) {
+		if (!noteId) return;
+		if (noteId === note.id) currentContent = newContent;
+		pendingSave = { id: noteId, content: newContent };
 	}
 
 	function copyMarkdown() {

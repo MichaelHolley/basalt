@@ -38,17 +38,18 @@
 			const isLast = i === arr.length - 1;
 			const pathSoFar = arr.slice(0, i + 1).join('/');
 			const href = '/spaces/' + pathSoFar;
+			const fallback = seg.replace(/\.md$/, '');
 
 			let label: string;
 			if (isLast && pd.type === 'space') {
-				label = (pd.space as { name?: string } | undefined)?.name ?? seg;
+				label = (pd.space as { name?: string } | undefined)?.name ?? fallback;
 			} else if (isLast && pd.type === 'note') {
-				label = (pd.note as { title?: string } | undefined)?.title ?? seg;
+				label = (pd.note as { title?: string } | undefined)?.title ?? fallback;
 			} else if (isLast && pd.type === 'todo') {
-				label = (pd.todo as { title?: string } | undefined)?.title ?? seg;
+				label = (pd.todo as { title?: string } | undefined)?.title ?? fallback;
 			} else {
 				// Intermediate segment — always a space
-				label = spaceNameMap.get(pathSoFar) ?? seg.charAt(0).toUpperCase() + seg.slice(1);
+				label = spaceNameMap.get(pathSoFar) ?? fallback.charAt(0).toUpperCase() + fallback.slice(1);
 			}
 
 			return { label, href, isLast };
