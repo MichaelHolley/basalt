@@ -1,11 +1,12 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	import SpaceCreateNoteForm from '$lib/components/spaces/SpaceCreateNoteForm.svelte';
 	import SpaceCreateTodoForm from '$lib/components/spaces/SpaceCreateTodoForm.svelte';
 	import SpaceNameForm from '$lib/components/spaces/SpaceNameForm.svelte';
 	import TodoTree from '$lib/components/todos/TodoTree.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import type { TodoNode, Space, Note } from '$lib/server/db/types';
-	import { FileText, Plus } from '@lucide/svelte';
+	import { FileText, Plus, Trash2 } from '@lucide/svelte';
 
 	interface Props {
 		space: Space;
@@ -20,8 +21,23 @@
 </script>
 
 <div class="flex flex-col gap-6">
-	<div>
+	<div class="flex items-center justify-between">
 		<SpaceNameForm {space} />
+		<form method="POST" action="/spaces?/delete" use:enhance class="contents">
+			<input type="hidden" name="id" value={space.id} />
+			<Button
+				type="submit"
+				variant="ghost"
+				size="icon"
+				class="size-5 shrink-0 hover:text-destructive"
+				title="Delete space"
+				onclick={(e) => {
+					if (!confirm(`Delete "${space.name}" and all its contents?`)) e.preventDefault();
+				}}
+			>
+				<Trash2 class="size-3" />
+			</Button>
+		</form>
 	</div>
 
 	<div>

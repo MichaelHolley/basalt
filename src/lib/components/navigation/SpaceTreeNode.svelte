@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { slide } from 'svelte/transition';
-	import { enhance } from '$app/forms';
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import { Button } from '$lib/components/ui/button';
-	import { Folder, FolderOpen, FolderPlus, FileText, Trash2 } from '@lucide/svelte';
+	import { Folder, FolderOpen, FolderPlus, FileText } from '@lucide/svelte';
 	import type { SpaceNode, Note } from '$lib/server/db/types';
 	import CreateChildSpaceForm from '$lib/components/navigation/CreateChildSpaceForm.svelte';
 	import SpaceTree from '$lib/components/navigation/SpaceTree.svelte';
@@ -60,29 +59,6 @@
 			>
 				<FolderPlus class="size-3" />
 			</Button>
-			<form
-				method="POST"
-				action="/spaces?/delete"
-				use:enhance={() =>
-					({ update }) =>
-						update({ invalidateAll: true })}
-				class="contents"
-			>
-				<input type="hidden" name="id" value={space.id} />
-				<Button
-					type="submit"
-					variant="ghost"
-					size="icon"
-					class="size-5 hover:text-destructive"
-					title="Delete"
-					onclick={(e) => {
-						e.stopPropagation();
-						if (!confirm(`Delete "${space.name}" and all its contents?`)) e.preventDefault();
-					}}
-				>
-					<Trash2 class="size-3" />
-				</Button>
-			</form>
 		</span>
 	</div>
 

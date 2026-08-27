@@ -65,7 +65,10 @@ export const actions: Actions = {
 		if (!result.success) return fail(400, { error: result.error.issues[0].message });
 
 		const config = getConfig();
+		const existing = getSpace(result.data.id);
+		if (!existing) return fail(404, { error: 'Space not found' });
+
 		deleteSpace(result.data.id, config.vaultPath);
-		return { success: true };
+		redirect(302, existing.parentId ? `/spaces/${existing.parentId}` : '/');
 	}
 };
