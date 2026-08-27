@@ -24,12 +24,12 @@
 
 <Sidebar.MenuItem>
 	<div
-		class="group/space relative flex h-8 w-full items-center gap-2 overflow-hidden rounded-md pl-2 text-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+		class="group/space relative flex h-8 w-full items-center gap-2 overflow-hidden rounded-md pl-2 text-sm group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:p-0 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
 		data-sidebar="menu-button"
 	>
 		<button
 			type="button"
-			class="flex shrink-0 cursor-pointer items-center justify-center py-2 group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:p-2"
+			class="flex shrink-0 cursor-pointer items-center justify-center py-2 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2!"
 			onclick={() => (collapsed = !collapsed)}
 			title={collapsed ? 'Expand' : 'Collapse'}
 		>
@@ -39,7 +39,7 @@
 				<FolderOpen class="size-4 group-data-[collapsible=icon]:hidden" />
 			{/if}
 			<span
-				class="hidden size-5 shrink-0 items-center justify-center rounded bg-muted text-[10px] leading-none font-semibold text-muted-foreground group-data-[collapsible=icon]:flex"
+				class="hidden size-4 shrink-0 items-center justify-center rounded bg-muted text-[9px] leading-none font-semibold text-muted-foreground group-data-[collapsible=icon]:flex"
 			>
 				{space.name.slice(0, 2).toUpperCase()}
 			</span>
